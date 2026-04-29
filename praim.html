@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRAIM Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding.minor     { border-left-color: #27ae60; }
+  .finding.negligible{ border-left-color: #95a5a6; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tag-both         { background: #2980b9; color: white; }
+  .tag-blind        { background: #8e44ad; color: white; }
+  .tag-enriched     { background: #16a085; color: white; }
+  .tag-blind-enriched { background: #2c3e50; color: white; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .refuted   { background: #c0392b; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  .impact-minor     { background: #f1c40f; color: #333; }
+  .impact-negligible{ background: #95a5a6; color: white; }
+  .impact-low       { background: #bdc3c7; color: #333; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .enrichment-value { font-size: 1.1rem; font-weight: 700; }
+  .high-val { color: #16a085; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>PRAIM Analysis &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-04-17 &nbsp;|&nbsp; Dataset: PRAIM (N = 461,818 screening studies) &nbsp;|&nbsp;
+  Domain: Breast cancer screening / AI decision-support &nbsp;|&nbsp;
+  Code: praim/*.R &nbsp;|&nbsp;
+  Paper: <a href="https://www.nature.com/articles/s41591-024-03408-6" target="_blank" rel="noopener">Nature Medicine (2024) &mdash; s41591-024-03408-6</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Two independent tracks &mdash; Track A (blind, no enrichment) and Track B (enriched, with semantic layer) &mdash; each with 3 specialist auditors (code, honesty, facts). Followed by verifier and impact quantifier.<br><br>
+  <strong>Result:</strong> 15 findings across both tracks. 13 VERIFIED, 1 PARTIALLY VERIFIED, 1 REFUTED.
+  Two findings are <strong>MAJOR</strong> impact; one is <strong>CRITICAL</strong> (resampling validity).
+  <br><br>
+  <span class="enrichment-value high-val">Enrichment value: HIGH</span> &mdash; Track B found 3 unique findings (F11, F12, F15) that Track A missed entirely. F11 (screening_unit excluded from PS) has MAJOR impact.
+</div>
+
+<h2>Audit Findings</h2>
+
+<!-- F1 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 1 &mdash; Wrong model for &ldquo;multiple with supervision&rdquo; AAP predictions</div>
+  <div class="badges">
+    <span class="badge tag-both">BOTH</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Model-result mismatch (copy-paste error)</span>
+    <span class="meta-label">Location</span><span>praim/06_Table3.R:127, 219, 312, 404, 510, 611, 757, 872, 1000, 1117</span>
+  </div>
+  <p>In every &ldquo;multiple with supervision&rdquo; block across all 6 outcomes and all 4 cancer-subtype analyses, the Average Adjusted Predictions (AAP) are computed using <code>avg_predictions(mod_sens2a, ...)</code> &mdash; the model <em>without</em> supervision &mdash; while <code>avg_comparisons</code> correctly uses <code>mod_sens3a</code> (with supervision). The two halves of each result row come from different models.</p>
+  <pre>### Multiple regression with supervision
+cbind(regression = "multiple with supervision",
+  avg_predictions(mod_sens2a, ...))   # WRONG: should be mod_sens3a
+CDR_diff  &lt;- avg_comparisons(mod_sens3a, ...)  # correct
+CDR_ratio &lt;- avg_comparisons(mod_sens3a, ...)</pre>
+  <p><strong>Impact:</strong> supervision=True accounts for 6.9% of rows (5.6% AI, 8.7% control). Cancer detection rate difference between supervised and unsupervised: &lt;0.3%; recall ~5%. Predicted rates for this sensitivity row are modestly wrong.</p>
+  <p><strong>Fix:</strong> Replace <code>avg_predictions(mod_sens2a, ...)</code> with <code>avg_predictions(mod_sens3a, ...)</code> in all &ldquo;multiple with supervision&rdquo; blocks.</p>
+  <p><em>Found by: blind-honesty, blind-code, enriched-honesty, enriched-code, enriched-facts.</em></p>
+</div>
+
+<!-- F2 -->
+<div class="finding critical">
+  <div class="finding-title">Finding 2 &mdash; Resampling overwrite bug: all 1,000 iterations run on the original full dataset</div>
+  <div class="badges">
+    <span class="badge tag-both">BOTH</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Wrong data loading in resampling loop</span>
+    <span class="meta-label">Location</span><span>praim/Suppl_Resampling_InternalFunctions.R:13&ndash;14</span>
+  </div>
+  <p><code>Suppl_Resampling_InternalFunctions.R</code> is <code>source()</code>d inside the 1,000-iteration loop in both resampling scripts. Its first two lines overwrite the resampled <code>d1</code> that was just loaded:</p>
+  <pre># InternalFunctions.R lines 13-14:
+load("Output/PRAIM_withWeights.RData")   # loads full dataset into d
+d1 &lt;- d                                  # overwrites the resampled d1!
+
+# Calling loop (Suppl_Resampling_Subset.R:31-32):
+load(file = paste0("Output/Subset/PRAIM_SubsetWithWeights_", s[j], ".RData"))
+source("Code/Suppl_Resampling_InternalFunctions.R")  # immediately overwrites d1</pre>
+  <p>All 1,000 iterations analyze the identical full dataset. The resampled CIs reflect only Monte Carlo estimator noise, not sampling variability.</p>
+  <p><strong>Impact:</strong> Correct SE inflation factor = &radic;(461,818 / 369,454) = <strong>1.118</strong>. Reported resampling CIs are approximately <strong>11.8% too narrow</strong> throughout. For results near significance thresholds this could shift conclusions.</p>
+  <p><strong>Fix:</strong> Remove the <code>load()</code> and <code>d1 &lt;- d</code> lines from <code>InternalFunctions.R</code>. The calling scripts already provide <code>d1</code>.</p>
+  <p><em>Found by: blind-code, enriched-code.</em></p>
+</div>
+
+<!-- F3 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 3 &mdash; Missing row comma: <code>[-which(...)]</code> performs column, not row, removal</div>
+  <div class="badges">
+    <span class="badge tag-both">BOTH</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-negligible">NEGLIGIBLE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Wrong filter / boundary error</span>
+    <span class="meta-label">Location</span><span>praim/06_Table3.R:444, 547 &nbsp;|&nbsp; praim/10_ExtDataTable3.R:272, 324</span>
+  </div>
+  <p><code>d_biopsy_mult &lt;- d_biopsy_mult[-which(...)]</code> is missing a trailing comma. In R, <code>df[-vector]</code> without a comma performs column subsetting, not row removal. The intended MISSING-value filter is silently broken for PPV multiple regression datasets.</p>
+  <p><strong>Impact:</strong> 11 / 2,919 biopsy rows (0.38%) retain MISSING demographics. Negligible effect on coefficients.</p>
+  <p><strong>Fix:</strong> <code>d_biopsy_mult[-which(...), ]</code> (add comma before <code>]</code>).</p>
+  <p><em>Found by: blind-code, enriched-code, enriched-facts.</em></p>
+</div>
+
+<!-- F4 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 4 &mdash; <code>na.omit(cols=)</code> silently ignored for plain data.frames</div>
+  <div class="badges">
+    <span class="badge tag-both">BOTH</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-negligible">NEGLIGIBLE (latent)</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Silent wrong filter</span>
+    <span class="meta-label">Location</span><span>praim/06_Table3.R:442, 546 &nbsp;|&nbsp; praim/10_ExtDataTable3.R:270, 323</span>
+  </div>
+  <p>Base R&rsquo;s <code>na.omit.data.frame</code> does not accept a <code>cols</code> argument. <code>na.omit(d1, cols = c("correct_biopsy"))</code> silently ignores <code>cols</code> and removes any row with any NA across all columns. Accidentally produces the correct result only because <code>correct_biopsy</code> is currently the only NA-carrying column. Fragile if upstream code introduces additional NAs.</p>
+  <p><strong>Fix:</strong> <code>d_biopsy_mult &lt;- d_biopsy</code> (already computed one line above).</p>
+  <p><em>Found by: blind-code, enriched-code, enriched-honesty, enriched-facts.</em></p>
+</div>
+
+<!-- F5 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; <code>stageX</code> uses non-existent &ldquo;STAGE_X&rdquo; value; MISSING stage cases excluded from Table 3</div>
+  <div class="badges">
+    <span class="badge tag-blind-enriched">BLIND+ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR&ndash;MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Data coding inconsistency / non-existent category</span>
+    <span class="meta-label">Location</span><span>praim/06_Table3.R:907 &nbsp;vs&nbsp; praim/10_ExtDataTable3.R:509</span>
+  </div>
+  <p>The main analysis encodes unknown stage as <code>cancer_stage == "STAGE_X" | cancer_stage == "CANNOT_BE_DETERMINED"</code>. &ldquo;STAGE_X&rdquo; does not exist in the data. The sensitivity analysis (ExtDataTable3) correctly uses <code>"MISSING" | "CANNOT_BE_DETERMINED"</code>. As a result, 117 detected cancers with <code>cancer_stage == "MISSING"</code> (4.1% of all detected cancers) receive all-zero stage indicators in Table 3, silently treated as reference-category observations. A dead variable <code>stageU</code> is initialized but never assigned (incomplete edit).</p>
+  <p><strong>Impact:</strong> 117 / 2,881 detected cancers (4.1%) miscategorized. Given only 56 Stage 3/4 cancers in the sample, absorbing 117 misclassified cases substantially distorts Stage 3/4 rate estimates.</p>
+  <p><em>Enrichment contributed: PRAIM.yaml enumerated all 8 valid cancer_stage values, revealing &ldquo;STAGE_X&rdquo; is absent.</em></p>
+  <p><strong>Fix:</strong> <code>d1$stageX[which(d1$cancer_stage %in% c("CANNOT_BE_DETERMINED","MISSING"))] &lt;- 1</code> in both files.</p>
+  <p><em>Found by: blind-honesty, blind-code, enriched-honesty, enriched-code, enriched-facts.</em></p>
+</div>
+
+<!-- F6 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 6 &mdash; <code>240613_praim.csv</code> filename breaks fresh reproducibility</div>
+  <div class="badges">
+    <span class="badge tag-both">BOTH</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-negligible">NEGLIGIBLE (runtime)</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Reproducibility error / stale internal filename</span>
+    <span class="meta-label">Location</span><span>praim/10_ExtDataTable3.R:22</span>
+  </div>
+  <p><code>d &lt;- read.csv("Data/240613_praim.csv")</code> &mdash; a date-prefixed internal filename that does not exist in the public repository. All other scripts use <code>Data/praim.csv</code>. Silently bypassed if pre-computed <code>PRAIM_withWeights_largeAdjSet.RData</code> already exists; fails on a clean reproduction.</p>
+  <p><strong>Fix:</strong> Change to <code>read.csv("Data/praim.csv")</code>.</p>
+  <p><em>Found by: blind-code, enriched-honesty, enriched-facts.</em></p>
+</div>
+
+<!-- F7 -->
+<div class="finding critical">
+  <div class="finding-title">Finding 7 &mdash; <code>sn_acc_cancer</code> labeled &ldquo;cancers saved by AI&rdquo; is a co-occurrence measure, not a counterfactual</div>
+  <div class="badges">
+    <span class="badge tag-blind">BLIND</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Data misrepresentation / causal overclaim</span>
+    <span class="meta-label">Location</span><span>praim/05_Table2.R:13&ndash;16</span>
+  </div>
+  <p>The variable <code>sn_acc_cancer</code> is defined as <code>cancer_detected == "True" AND safety_net_accepted == "True"</code> with the comment: <em>&ldquo;these cancers wouldn&rsquo;t be found without AI.&rdquo;</em> This is a co-occurrence indicator. It provides no causal evidence that the cancer would have been missed without the safety net.</p>
+  <pre># 05_Table2.R lines 13-16 (comment is the authors' own):
+# (these cancers wouldn't be found without AI)
+d$sn_acc_cancer &lt;- "False"
+d$sn_acc_cancer[which(d$cancer_detected == "True" &amp;
+                      d$safety_net_accepted == "True")] &lt;- "True"</pre>
+  <p><strong>Impact:</strong> In the example data, every one of the 204 cases meeting this definition had already been flagged as suspicious by at least one human reader independently. The count of cases where the safety net was the <em>sole</em> mechanism preventing a miss appears to be <strong>0</strong> in the example data. The headline count of &ldquo;AI-saved cancers&rdquo; is substantially inflated.</p>
+  <p><em>Found by: blind-honesty only. Track B auditors found related Table 5 issues but not this specific claim.</em></p>
+</div>
+
+<!-- F8 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 8 &mdash; Cancer subtype regressions use all-screened-women denominator, not cancer-cases-only</div>
+  <div class="badges">
+    <span class="badge tag-blind">BLIND</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR (framing)</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Clinical intent gap / denominator conflation</span>
+    <span class="meta-label">Location</span><span>praim/06_Table3.R ~lines 677&ndash;1130 (grade, stage, size, invasiveness)</span>
+  </div>
+  <p>Binary indicators such as <code>d1$G2 &lt;- ifelse(invasive_grade == "G2", 1, 0)</code> are created over all rows, including non-cancer rows where <code>invasive_grade = "NOT_APPLICABLE"</code> (coded 0). The regression measures the <em>detection rate of G2 cancers per screen</em>, not the <em>proportion of G2 among detected cancers</em>. A code comment acknowledges this design choice. Both framings are internally valid but produce 4.2&times; different numbers (G2: 109.6 per 1,000 screens vs. 45.9% of cancers) and invite misinterpretation.</p>
+  <p><em>Found by: blind-honesty only. Not flagged by enriched track.</em></p>
+</div>
+
+<!-- F9 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 9 &mdash; <code>ai_prediction</code> used as confounder but appears as mediator in authors&rsquo; own DAG</div>
+  <div class="badges">
+    <span class="badge tag-blind">BLIND</span>
+    <span class="badge partial">PARTIALLY VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>DAG specification question</span>
+    <span class="meta-label">Location</span><span>praim/03_Weights.R:12 &nbsp;|&nbsp; praim/14_ExtDataFigure6.R</span>
+  </div>
+  <p>The DAG in <code>14_ExtDataFigure6.R</code> codes <code>ai_prediction -&gt; used_ai_viewer -&gt; cancer_detected</code>, placing <code>ai_prediction</code> on a causal path from background disease to treatment. <code>adjustmentSets()</code> on this DAG does return <code>{ai_prediction, reader_set}</code> as a valid adjustment set, so the authors&rsquo; own structural model internally justifies the choice. The concern remains valid if <code>ai_prediction</code> is generated simultaneously with &mdash; rather than strictly before &mdash; the decision to use the AI viewer.</p>
+  <p><strong>Impact:</strong> Cramer&rsquo;s V (ai_prediction vs used_ai_viewer) = 0.028 in example data. Practical impact on PS estimates is minor regardless of interpretation.</p>
+  <p><em>Found by: blind-honesty only.</em></p>
+</div>
+
+<!-- F10 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 10 &mdash; Table 5 counterfactual: PS weights computed before outcome zeroing</div>
+  <div class="badges">
+    <span class="badge tag-blind-enriched">BLIND+ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR (conceptual)</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Weights&ndash;estimand mismatch in counterfactual analysis</span>
+    <span class="meta-label">Location</span><span>praim/08_Table5.R:30</span>
+  </div>
+  <p>Table 5 models a hypothetical protocol where AI-tagged &ldquo;normal&rdquo; studies bypass radiologist review (outcomes zeroed). The zeroing is applied <em>after</em> loading PS weights computed on real, unmodified data. The weights calibrate the real-world population distribution; they do not correspond to the counterfactual population with zeroed outcomes.</p>
+  <p><em>Enriched track additionally noted that zeroing also applies to cases where <code>safety_net_triggered == True</code>, potentially over-attributing the counterfactual effect.</em></p>
+  <p><em>Found by: blind-honesty, enriched-honesty.</em></p>
+</div>
+
+<!-- F11 -->
+<div class="finding critical">
+  <div class="finding-title">Finding 11 &mdash; <code>screening_unit</code> excluded from all PS models despite being the dominant confounder</div>
+  <div class="badges">
+    <span class="badge tag-enriched">ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Omitted variable bias / confounding</span>
+    <span class="meta-label">Location</span><span>praim/03_Weights.R:12 (all PS models)</span>
+  </div>
+  <p>The PS model uses only <code>used_ai_viewer ~ ai_prediction + reader_set</code>. <code>screening_unit</code> (12 sites) is never included in any PS model, sensitivity analysis, or cluster correction &mdash; despite being the strongest predictor of AI viewer use in the data.</p>
+  <ul>
+    <li>Cramer&rsquo;s V (screening_unit vs used_ai_viewer) = <strong>0.533</strong></li>
+    <li>screening_unit_12: <strong>0% AI use</strong> (149 studies)</li>
+    <li>screening_unit_07: <strong>96.5% AI use</strong> (1,612 studies)</li>
+    <li>screening_unit_03: <strong>89.5% AI use</strong> (1,173 studies)</li>
+    <li>Cancer detection rate range across units: 18.95%&ndash;29.53% (SD = 3.67 pp)</li>
+    <li>24.3% of sample rows are in the three extreme-allocation units</li>
+  </ul>
+  <p>Screening unit is a near-perfect proxy for AI assignment in several sites and independently associated with outcomes. Excluding it leaves major structural confounding uncontrolled in all primary and sensitivity analyses.</p>
+  <p><em>Enrichment contributed: semantic layer documented <code>screening_unit</code> as a 12-category site identifier with known AI deployment variation, directly prompting this check.</em></p>
+  <p><em>Found by: enriched-honesty only. Not found by blind track.</em></p>
+</div>
+
+<!-- F12 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 12 &mdash; Subgroup analyses apply full-cohort PS weights without re-estimation</div>
+  <div class="badges">
+    <span class="badge tag-enriched">ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR&ndash;MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Causal inference design / subgroup weight misalignment</span>
+    <span class="meta-label">Location</span><span>praim/07_Table4_ExtDataTable2.R</span>
+  </div>
+  <p>Table 4 subgroup analyses (by screening round, breast density, age, hardware vendor) subset the data and apply the full-cohort PS overlap weights directly &mdash; no re-estimation of propensity scores within each subgroup. Overlap weights computed on the full cohort balance the marginal distribution but are not guaranteed to balance within subgroups where the PS distribution may differ.</p>
+  <p><em>Found by: enriched-honesty only. Not found by blind track.</em></p>
+</div>
+
+<!-- F13 -->
+<div class="finding negligible">
+  <div class="finding-title">Finding 13 &mdash; &ldquo;UNKNOWN&rdquo; hardware vendor subgroup has 2 rows (near-empty, produces unstable estimates)</div>
+  <div class="badges">
+    <span class="badge tag-enriched">ENRICHED</span>
+    <span class="badge refuted">REFUTED (as stated)</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-negligible">NEGLIGIBLE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Sparse subgroup</span>
+    <span class="meta-label">Location</span><span>praim/07_Table4_ExtDataTable2.R</span>
+  </div>
+  <p>The claim that <code>"UNKNOWN"</code> hardware vendor never exists in the data is <strong>refuted</strong>: 2 rows with <code>hardware_vendor = "UNKNOWN"</code> are present in the example CSV (0.017%). The subgroup will produce essentially meaningless estimates with enormous uncertainty, but it is not always empty.</p>
+  <p><em>Found by: enriched-facts. Refuted by verifier.</em></p>
+</div>
+
+<!-- F14 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 14 &mdash; Safety-net alert displayed in only ~13% of triggered cases</div>
+  <div class="badges">
+    <span class="badge tag-blind-enriched">BLIND+ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-minor">MINOR (descriptive)</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Data honesty / clinical context gap</span>
+    <span class="meta-label">Location</span><span>praim/05_Table2.R</span>
+  </div>
+  <p>In example CSV: <code>safety_net_triggered=True</code> in 1,975 rows; <code>safety_net_shown=True</code> in only 260 of those (~13%). The safety net was generated internally but withheld from radiologists in ~87% of triggered cases. Any analysis framing the safety net as a clinical intervention should foreground this distinction.</p>
+  <p><em>Enrichment contributed: documented the three-step cascade (triggered &rarr; shown &rarr; accepted) and the logical dependency that shown requires used_ai_viewer=True.</em></p>
+  <p><em>Found by: blind-honesty, enriched-facts.</em></p>
+</div>
+
+<!-- F15 -->
+<div class="finding minor">
+  <div class="finding-title">Finding 15 &mdash; <code>target</code> assigned twice; cancer detection stratification never runs</div>
+  <div class="badges">
+    <span class="badge tag-enriched">ENRICHED</span>
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-low">LOW</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Silent overwrite</span>
+    <span class="meta-label">Location</span><span>praim/Suppl_Stratification.R:12&ndash;13</span>
+  </div>
+  <pre>target &lt;- "cancer_detected"   # immediately overwritten
+target &lt;- "had_recall"         # always wins</pre>
+  <p>The cancer detection stratification analysis never executes. Only the recall analysis runs. Supplementary-level impact.</p>
+  <p><em>Found by: enriched-facts only.</em></p>
+</div>
+
+
+<!-- SUMMARY TABLE -->
+<h2>Summary Table</h2>
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Tag</th><th>Verified</th><th>Novel</th><th>Impact</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Wrong supervision model in AAP (all Table 3 outcomes)</td><td>BOTH</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR</td></tr>
+<tr><td>2</td><td>Resampling overwrite: all 1,000 iterations use original data; CIs 11.8% too narrow</td><td>BOTH</td><td>VERIFIED</td><td>NOVEL*</td><td>MODERATE</td></tr>
+<tr><td>3</td><td>Missing row comma in <code>[-which(...)]</code> &mdash; PPV row filter broken</td><td>BOTH</td><td>VERIFIED</td><td>NOVEL*</td><td>NEGLIGIBLE</td></tr>
+<tr><td>4</td><td><code>na.omit(cols=)</code> silently ignored on data.frame</td><td>BOTH</td><td>VERIFIED</td><td>NOVEL*</td><td>NEGLIGIBLE</td></tr>
+<tr><td>5</td><td>&ldquo;STAGE_X&rdquo; non-existent; 4.1% of cancers get zero stage indicators in Table 3</td><td>BLIND+ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR&ndash;MODERATE</td></tr>
+<tr><td>6</td><td><code>240613_praim.csv</code> filename breaks fresh reproducibility</td><td>BOTH</td><td>VERIFIED</td><td>NOVEL*</td><td>NEGLIGIBLE</td></tr>
+<tr><td>7</td><td><code>sn_acc_cancer</code> = co-occurrence not counterfactual; 0 true AI-only saves in example</td><td>BLIND</td><td>VERIFIED</td><td>NOVEL*</td><td><strong>MAJOR</strong></td></tr>
+<tr><td>8</td><td>Subtype regressions use all-screens denominator, not cancer-cases (4.2&times; framing gap)</td><td>BLIND</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR (framing)</td></tr>
+<tr><td>9</td><td><code>ai_prediction</code> as mediator in DAG vs confounder in PS</td><td>BLIND</td><td>PARTIALLY VERIFIED</td><td>NOVEL*</td><td>MINOR</td></tr>
+<tr><td>10</td><td>Table 5: PS weights predate counterfactual zeroing; estimand mismatch</td><td>BLIND+ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR (conceptual)</td></tr>
+<tr><td>11</td><td><code>screening_unit</code> excluded from all PS models (Cramer&rsquo;s V = 0.533)</td><td>ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td><strong>MAJOR</strong></td></tr>
+<tr><td>12</td><td>Subgroup analyses use full-cohort PS weights without re-estimation</td><td>ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR&ndash;MODERATE</td></tr>
+<tr><td>13</td><td>UNKNOWN hardware vendor subgroup: 2 rows (near-empty, not always empty)</td><td>ENRICHED</td><td>REFUTED (as stated)</td><td>NOVEL*</td><td>NEGLIGIBLE</td></tr>
+<tr><td>14</td><td>Safety net shown in only 13% of triggered cases</td><td>BLIND+ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td>MINOR (descriptive)</td></tr>
+<tr><td>15</td><td><code>target</code> overwritten; cancer detection stratification never runs</td><td>ENRICHED</td><td>VERIFIED</td><td>NOVEL*</td><td>LOW</td></tr>
+</tbody>
+</table>
+
+<h3>Tag counts</h3>
+<table>
+<thead><tr><th>Tag</th><th>Count</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td>BOTH</td><td>6</td><td>F1 (supervision model), F2 (resampling bug), F3 (comma), F4 (na.omit), F5 (stageX), F6 (filename)</td></tr>
+<tr><td>BLIND</td><td>3</td><td>F7 (sn_acc_cancer), F8 (denominator), F9 (mediator)</td></tr>
+<tr><td>ENRICHED</td><td>4</td><td>F11 (screening_unit), F12 (subgroup weights), F13 (UNKNOWN vendor), F15 (target)</td></tr>
+<tr><td>BLIND+ENRICHED</td><td>2</td><td>F5 (enrichment added stage value detail), F10 (enrichment added SN detail), F14 (SN cascade)</td></tr>
+</tbody>
+</table>
+<p class="section-note">* Novelty unverified &mdash; WebSearch was unavailable. All findings should be treated as potentially novel pending a manual PubPeer / Nature Medicine letters / GitHub issues search.</p>
+
+
+<!-- ENRICHMENT VALUE -->
+<h2>Enrichment Value: HIGH</h2>
+<div class="summary-box">
+  <p><span class="enrichment-value high-val">HIGH</span> &mdash; Track B found 3 unique findings (F11, F12, F15) that Track A missed entirely:</p>
+  <ul>
+    <li><strong>F11 (MAJOR)</strong> &mdash; <code>screening_unit</code> excluded from PS. Cramer&rsquo;s V = 0.53 between site and treatment. Only identified because the semantic layer documented <code>screening_unit</code> as a site-level variable with known AI deployment variation.</li>
+    <li><strong>F12 (MINOR&ndash;MODERATE)</strong> &mdash; Full-cohort PS weights applied to subgroups. Enabled by enrichment&rsquo;s grain analysis.</li>
+    <li><strong>F15 (LOW)</strong> &mdash; target overwrite in supplementary stratification script.</li>
+  </ul>
+  <p>Enrichment additionally deepened F5 (stage value enumeration) and F14 (safety-net cascade logic).</p>
+</div>
+
+
+<!-- KEY TAKEAWAYS -->
+<h2>Key Takeaways</h2>
+<ul>
+  <li><strong>13 verified, 1 partially verified, 1 refuted</strong> out of 15 total findings.</li>
+  <li><strong>2 MAJOR findings:</strong> F7 (safety-net &ldquo;saves&rdquo; are co-occurrence, not causal) and F11 (screening_unit excluded from PS; Cramer&rsquo;s V = 0.53).</li>
+  <li><strong>1 CRITICAL code bug:</strong> F2 (resampling overwrite) &mdash; all 1,000 resampling iterations analyze identical full data; reported CIs are 11.8% too narrow.</li>
+  <li><strong>Top finding by impact:</strong> F11 &mdash; the strongest predictor of AI viewer use (screening_unit, V = 0.53) is entirely absent from all propensity score models, leaving site-level confounding uncontrolled in all primary estimates.</li>
+  <li><strong>Second-highest impact:</strong> F7 &mdash; the headline count of &ldquo;cancers saved exclusively by AI&rdquo; appears to be near zero when the co-occurrence definition is interrogated against the data.</li>
+  <li><strong>Most prevalent code class:</strong> Silent wrong filters (F3, F4) and copy-paste errors (F1) &mdash; easy to fix but found in 4+ locations each.</li>
+</ul>
+
+</body>
+</html>
