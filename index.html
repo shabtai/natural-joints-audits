@@ -17,9 +17,14 @@
   .summary { font-size: 0.92rem; line-height: 1.45; }
   .tags { margin-top: 0.6rem; }
   .tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.35rem; }
-  .tag-major    { background: #c0392b; color: white; }
-  .tag-moderate { background: #e67e22; color: white; }
   .tag-critical { background: #8b0000; color: white; }
+  .tag-major    { background: #c0392b; color: white; }
+  .tag-high     { background: #c0392b; color: white; }
+  .tag-moderate { background: #e67e22; color: white; }
+  .tag-medium   { background: #e67e22; color: white; }
+  .tag-low      { background: #95a5a6; color: white; }
+  .tag-info     { background: #2980b9; color: white; }
+  .tag-valid    { background: #27ae60; color: white; }
   .footer { margin-top: 3rem; font-size: 0.85rem; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 1rem; }
   a { color: #2980b9; text-decoration: none; }
   a:hover { text-decoration: underline; }
@@ -48,6 +53,30 @@
 </div>
 
 <div class="audit">
+  <h2><a href="https://shabtai.github.io/precise-melanoma-audit/">PRECISE &mdash; npj Precision Oncology (2025)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Melanoma immune-checkpoint inhibitor response (single-cell)</span>
+    <span>Generated: 2026-04-06</span>
+  </div>
+  <p class="summary">PRECISE (PREdicting Clinical Immunotherapy reSponse with single-cell Expression data) reports an AUC of 0.84 for an 11-gene XGBoost classifier trained with Boruta feature selection, RL label refinement, and leave-one-out cross-validation. Audit finds six compounding methodological problems &mdash; none previously reported &mdash; that together call the AUC into question and suggest the model may be learning to detect treatment effects rather than predict response.</p>
+  <div class="tags">
+    <span class="tag tag-major">6 methodological flaws</span>
+  </div>
+</div>
+
+<div class="audit">
+  <h2><a href="https://shabtai.github.io/anonymized-audit/">Anonymized &mdash; Single-cell treatment-response predictor (2026)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Single-cell expression &rarr; therapy response prediction</span>
+    <span>Generated: 2026</span>
+  </div>
+  <p class="summary">Anonymized companion report to PRECISE, presented without identifying the paper. Same six-flaw methodology &mdash; XGBoost + Boruta + RL label refinement + LOO-CV at AUC ~0.84 &mdash; written as a generic case study of how single-cell response predictors can leak treatment information into the predictor.</p>
+  <div class="tags">
+    <span class="tag tag-major">6 methodological flaws</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="praim.html">PRAIM &mdash; Eisemann et al., Nature Medicine (2024)</a></h2>
   <div class="meta-row">
     <span>Domain: Breast cancer screening / AI decision-support</span>
@@ -58,6 +87,47 @@
     <span class="tag tag-critical">1 critical</span>
     <span class="tag tag-major">2 major</span>
     <span class="tag tag-moderate">4 moderate</span>
+  </div>
+</div>
+
+<div class="audit">
+  <h2><a href="https://shabtai.github.io/promise-audit/">PROMISE &mdash; Kacen et al., Nature Biotechnology (2022)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Modified immunopeptidome &mdash; PTM-driven antigenicity</span>
+    <span>Generated: 2026-04-20</span>
+  </div>
+  <p class="summary">Pipeline audit of the Merbl Lab&rsquo;s PROMISE study covering 1,550 enriched columns. Audit finds 5 factual errors, 31 code findings, and 2,217 review findings on the data and analysis pipeline, but the paper&rsquo;s headline biological conclusions remain valid after correction. Includes separate enrichment supplements for MC38 and reference-database tables.</p>
+  <div class="tags">
+    <span class="tag tag-info">31 code</span>
+    <span class="tag tag-info">5 factual</span>
+    <span class="tag tag-valid">conclusions valid</span>
+  </div>
+</div>
+
+<div class="audit">
+  <h2><a href="https://shabtai.github.io/sars-cov2-ngs-audit/audit.html">SARS-CoV-2 NGS Barcodes &mdash; Cohen-Aharonov et al. (2022)</a></h2>
+  <div class="meta-row">
+    <span>Domain: SARS-CoV-2 NGS-based variant detection</span>
+    <span>Generated: 2026-04-20</span>
+  </div>
+  <p class="summary">Audit of an NGS barcode pipeline for SARS-CoV-2 variant detection (PMC9212143). Twenty-two findings spanning code correctness and data integrity, including two critical pipeline issues that affect the reported variant calls.</p>
+  <div class="tags">
+    <span class="tag tag-critical">2 critical</span>
+    <span class="tag tag-high">11 high</span>
+    <span class="tag tag-medium">7 medium</span>
+    <span class="tag tag-low">2 low</span>
+  </div>
+</div>
+
+<div class="audit">
+  <h2><a href="https://shabtai.github.io/deepcdr-audit/">DeepCDR &mdash; Cancer Drug Response Prediction</a></h2>
+  <div class="meta-row">
+    <span>Domain: Drug response prediction (GDSC + cell-line expression)</span>
+    <span>Generated: 2026-04</span>
+  </div>
+  <p class="summary">Data-integrity audit of DeepCDR, a deep-learning cancer drug response predictor still actively benchmarked in 2025&ndash;2026 publications. Two data bugs surface in the deposited GDSC inputs: (1) cisplatin is mapped to the wrong PubChem CID (an isomer rather than the active molecule), and (2) a threshold-mapping bug in the IC50&nbsp;&rarr;&nbsp;sensitivity-label step. Both propagate into every downstream evaluation that uses the deposited drug list.</p>
+  <div class="tags">
+    <span class="tag tag-major">2 data bugs</span>
   </div>
 </div>
 
