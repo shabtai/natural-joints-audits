@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LORIS &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>LORIS &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-04-29 &nbsp;|&nbsp;
+  Dataset: LORIS bundle (Chowell train/test, MSK1, MSK2, Kato pan-cancer, Ravi NSCLC, Vanguri NSCLC, MSK_nonICB) &nbsp;|&nbsp;
+  Domain: Immune-checkpoint blockade response prediction &nbsp;|&nbsp;
+  Code: <a href="https://github.com/rootchang/LORIS" target="_blank" rel="noopener">LORIS/code/*.py, *.Rmd</a> &nbsp;|&nbsp;
+  Data: <a href="https://zenodo.org/records/11186449" target="_blank" rel="noopener">Zenodo deposit 11186449</a> &nbsp;|&nbsp;
+  Paper: <a href="https://www.nature.com/articles/s43018-024-00772-7" target="_blank" rel="noopener">Chang et al., Nature Cancer (2024)</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Multi-agent audit covering code, data honesty, and data facts, followed by independent verification, public-record novelty checking, and impact quantification (rerun where possible, otherwise proxy). The full audit produced a larger set of findings; this report covers only those whose impact on the paper&rsquo;s reported results is rated <strong>MAJOR</strong> or <strong>MODERATE</strong>.<br><br>
+  <strong>Headline:</strong> Three findings undermine claims that the paper rests on rather than the AUC values reported. Three further findings change the interpretation or precision of those AUCs without changing their direction. None of the issues require the model itself to be wrong; several show that specific cohort-level claims of generalization are not supported by the deposited inputs.
+</div>
+
+<div class="caveat-box">
+  <strong>Numerical caveat.</strong> Where AUC deltas are quoted below, they come from focused reproductions on the deposited Zenodo data using 200 bootstrap resamples (the paper&rsquo;s pipelines use 10,000). Treat the magnitudes as estimates with non-trivial Monte&nbsp;Carlo error; treat the directions and the structural claims as the load-bearing parts.
+</div>
+
+<h2>Major findings</h2>
+
+<!-- F-MAJOR-1 -->
+<div class="finding major">
+  <div class="finding-title">Finding 1 &mdash; MSK2 cancer-type vector is identically zero for the LLR6_pan model</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Mathematically inert feature on a headline cohort</span>
+    <span class="meta-label">Location</span><span><code>12.Formula_LORIS.py</code> (<code>featuresNA</code>); <code>data/MSK2.csv</code></span>
+  </div>
+  <p>The pan-cancer LLR6 model has 21 features: TMB, Systemic_therapy_history, Albumin, NLR, Age, and one-hot indicators <code>CancerType1</code>&hellip;<code>CancerType16</code>. The deposited <code>MSK2.csv</code> contains 104 patients in two cancer-type classes only:</p>
+  <ul>
+    <li><code>CancerType17</code> (Unknown primary): 29 patients</li>
+    <li><code>CancerType18</code> (CNS): 75 patients</li>
+    <li><code>CancerType1</code>&hellip;<code>CancerType16</code>: <strong>all zero in every row</strong></li>
+  </ul>
+  <p>Because the model has no slot for <code>CancerType17</code> or <code>CancerType18</code>, the cancer-type contribution to <em>every</em> MSK2 prediction is exactly zero. The LLR6_pan score on MSK2 is therefore a function of TMB, Albumin, NLR, Age, and Systemic_therapy_history alone &mdash; a 5-feature score, not a pan-cancer one.</p>
+  <p>A repo-wide grep across the 37 deposited scripts finds <strong>zero</strong> references to CancerType17 or CancerType18 anywhere &mdash; no remap, no fallback bucket, no per-cohort retraining. The coefficient file <code>PanCancer_LLR6_10k_ParamCalculate.txt</code> is fixed length 21 (5 continuous + CT1..CT16).</p>
+  <p><strong>Effect on paper claims.</strong> MSK2 is presented in the manuscript as evidence that LLR6 generalizes to cancer types not seen during training. Whatever signal the reported MSK2 AUC carries, it cannot be evidence that the cancer-type representation generalizes &mdash; that part of the model is mathematically silent on this cohort. The claim of pan-cancer generalization to novel cancer types is not supported by the deposited model architecture and the deposited test data, regardless of the AUC value.</p>
+</div>
+
+<!-- F-MAJOR-2 -->
+<div class="finding major">
+  <div class="finding-title">Finding 2 &mdash; NSCLC LLR6 is fit on the concatenation of <code>Chowell_train</code> + <code>Chowell_test</code></div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Train/test contamination (parameter estimation step)</span>
+    <span class="meta-label">Location</span><span><code>08_4.NSCLC_LLRx_10k_ParamCalculate.py</code>:47&ndash;50</span>
+  </div>
+  <p>The script that estimates the NSCLC-specific LLR6 coefficients begins by concatenating the held-out test split into the training pool, before applying the NSCLC filter:</p>
+  <pre>data_train = pd.read_excel(input_xlsx, sheet_name='Chowell_train')
+data_test  = pd.read_excel(input_xlsx, sheet_name='Chowell_test')
+data_all   = pd.concat([data_train, data_test], axis=0)
+data_NSCLC = data_all[data_all['CancerType_grouped'] == 'NSCLC']</pre>
+  <p>The pan-cancer counterpart (<code>05_5.PanCancer_LLRx_ParamCalculate.py</code>) fits the LLR6_pan model on <code>Chowell_train</code> alone &mdash; the methodology silently diverges between the two model families.</p>
+  <p>The manuscript reports training the NSCLC model on &ldquo;324 NSCLC participants&rdquo;. The concatenated NSCLC subset in the deposited inputs is approximately <strong>538 rows</strong>. The number reported in the paper text and the number actually used in the deposited code do not agree.</p>
+  <p><strong>Effect on paper claims.</strong> Reproduction on the train-only NSCLC subset (200 resamples) gives an AUC drop on Chowell-NSCLC of approximately <strong>0.789 &rarr; 0.759</strong> (&Delta; &asymp; &minus;0.03), the same scale as the LLR6-vs-TMB superiority margin claimed in the paper. The qualitative direction of NSCLC superiority over TMB survives at the lower estimate, but the headline gap is partly an artefact of the inflated fit. Every downstream NSCLC figure that uses the same coefficient file (Fig 6, Fig 10, Fig 11; scripts <code>09_3</code>&hellip;<code>09_5</code>) inherits the same compromised estimate.</p>
+</div>
+
+<!-- F-MAJOR-3 -->
+<div class="finding major">
+  <div class="finding-title">Finding 3 &mdash; Albumin and NLR are constants in <code>Kato_panCancer</code> and <code>Ravi_NSCLC</code>; LLR6 reduces to LLR4 on these cohorts</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Degenerate features on validation cohort (data honesty)</span>
+    <span class="meta-label">Location</span><span><code>data/Kato_panCancer.csv</code>; <code>data/Ravi_NSCLC.csv</code></span>
+  </div>
+  <p>In both cohorts, two of the six LLR6 input features take a single value across every patient:</p>
+  <ul>
+    <li><code>Albumin = 3.8</code> g/dL on every row</li>
+    <li><code>NLR = 6.2</code> on every row</li>
+  </ul>
+  <p>The LLR6 linear predictor on these cohorts therefore decomposes into a per-patient term that uses only TMB, Systemic_therapy_history, Age (and CancerType for Kato) plus a fixed <em>cohort-level</em> offset from the imputed Albumin and NLR values. Within either cohort, no patient-to-patient variation in score comes from Albumin or NLR; the ROC, Cox, and threshold analyses on these cohorts measure a 4-feature model dressed as a 6-feature model.</p>
+  <p><strong>Effect on paper claims.</strong> Kato and Ravi are presented as independent validation that LLR6 generalizes the joint use of all six features. On the deposited inputs that joint use is mathematically impossible for these cohorts &mdash; Albumin and NLR contribute zero discriminative information patient-to-patient. The numerical AUC values do not change (the constants merely shift the score by a fixed amount, which ranking-based AUC ignores), but the claim of feature-set generalization is structurally identical to F1 (MSK2): the reported AUC is real, what it measures is not what the manuscript implies.</p>
+</div>
+
+<h2>Moderate findings</h2>
+
+<!-- F-MOD-1 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 4 &mdash; Drop-censored landmark labels in OS-at-T ROC inflate the AUC</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Informative censoring &rarr; biased landmark labels</span>
+    <span class="meta-label">Location</span><span><code>07_3 PanCancer_LORIS_ROC_AUC_nonICB_vs_ICB_OS.py</code>:92&ndash;103</span>
+  </div>
+  <p>The OS-at-time-T binary outcome used for the ROC analyses is constructed as:</p>
+  <pre>label = NaN
+label[(OS_Months &lt;= T) &amp; (Event == 1)] = 1   # died by T
+label[OS_Months &gt;  T]                  = 0   # alive at T
+# patients with OS_Months &lt;= T and Event == 0 stay NaN and are dropped</pre>
+  <p>Patients censored before time T &mdash; the cases with the most ambiguous outcome &mdash; are silently removed from the AUC computation rather than handled with a Kaplan-Meier-based AUC<sub>t</sub>. The retained sample is enriched for patients with definitive outcomes, which makes the discrimination task easier than the question the paper asks.</p>
+  <p><strong>Effect on paper claims.</strong> Re-computing the AUC at the same horizon using a censoring-aware AUC<sub>t</sub> (Heagerty&rsquo;s method) on the deposited Chowell_test data shifts the pan-cancer OS AUC by approximately <strong>&minus;0.03</strong> &mdash; the same magnitude as the LORIS-over-TMB margin and the LORIS-over-TIDE margin emphasised in the paper. The qualitative ordering of LORIS vs. baselines survives the correction; the size of the win shrinks. The construction also affects the predictive-vs-prognostic comparison, because ICB and non-ICB cohorts have different censoring distributions and therefore different magnitudes of inflation.</p>
+</div>
+
+<!-- F-MOD-2 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; Independence of &ldquo;external&rdquo; MSK validation cohorts is overstated; populations overlap with the Chowell test set</div>
+  <div class="badges">
+    <span class="badge partial">PARTIALLY VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>External-validation framing / population independence</span>
+    <span class="meta-label">Location</span><span>Cohort design &mdash; <code>conversion_manifest.json</code>; sheet structure of <code>AllData.xlsx</code></span>
+  </div>
+  <p>The manuscript frames Chowell_test, MSK1, and MSK2 as independent test sets used for external validation. The deposited provenance documents that all three derive from MSK Cancer Center clinical-sequencing cohorts with overlapping enrollment windows, and that patients in the Chowell test split are drawn from the same MSK-IMPACT registry from which MSK1 and MSK2 are sampled.</p>
+  <p>This is not a code defect &mdash; no row in the deposited CSVs is duplicated across files &mdash; but the populations are <em>institutionally and temporally entangled</em>. The kinds of confounders that &ldquo;external&rdquo; validation is supposed to stress-test (different sequencing platform, different sample-handling, different clinical workflow, different selection biases) are not exercised by these splits.</p>
+  <p><strong>Effect on paper claims.</strong> The strongest reading of the paper&mdash;LORIS is a model that travels across institutions and platforms&mdash;is not supported by these particular cohorts. The narrower reading&mdash;LORIS holds up across temporally and structurally separated subcohorts of MSK-IMPACT&mdash;remains supported. The numerical AUCs are unchanged; the generalization claim attached to them needs to be rescaled.</p>
+</div>
+
+<!-- F-MOD-3 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 6 &mdash; The custom DeLong test omits the covariance term, biasing every paired-AUC <em>p</em>-value</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Wrong variance formula in significance test</span>
+    <span class="meta-label">Location</span><span><code>06_5.PanCancer_vs_nonNSCLC_LLR6_ROC_AUC.py</code>:30&ndash;40 (and re-used downstream)</span>
+  </div>
+  <p>The function used throughout the paper to compare two AUCs measured on the same patients is named <code>delong_test</code> but implements the Hanley&ndash;McNeil variance for a single AUC twice, summing the variances without subtracting the covariance term that DeLong&rsquo;s actual paired test computes from concordant tied-rank counts.</p>
+  <pre>var_diff = var_A + var_B            # missing -2 * cov(A, B)</pre>
+  <p>For two AUCs computed on the <em>same</em> set of patients (which is the situation everywhere this function is called &mdash; LORIS vs. TMB, LORIS vs. TIDE, LLR6 vs. RF6, etc.) the AUC errors are positively correlated; ignoring the covariance over-estimates Var(A&minus;B) and produces <em>p</em>-values that are systematically too large.</p>
+  <p><strong>Effect on paper claims.</strong> The bias direction is conservative for the paper&rsquo;s positive results &mdash; significant differences remain significant under a correctly implemented DeLong test. The bias does, however, mean that every reported <em>p</em>-value comparing two AUCs in the manuscript and supplements is an over-estimate; readers comparing the precise reported values to other studies that use a correct paired test will see numerically different (smaller) <em>p</em>-values on a re-run. Downstream, this matters for any &ldquo;LORIS not significantly worse than X&rdquo; claim, where the conservative test makes non-inferiority easier to declare than it should be.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>MSK2: cancer-type vector mathematically zero on every row of LLR6_pan</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; novel-cancer-type generalization claim is not supported by the deposited model + data</td></tr>
+<tr><td>2</td><td>NSCLC LLR6 fit includes Chowell_test (~538 rows vs. 324 reported)</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; ~&minus;0.03 AUC on the train-only refit; methodology disagrees with paper text and with the pan-cancer counterpart script</td></tr>
+<tr><td>3</td><td>Kato/Ravi: Albumin and NLR constant; LLR6 is mathematically LLR4 within these cohorts</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; 6-feature generalization claim degenerate on these validation cohorts (AUCs unchanged)</td></tr>
+<tr><td>4</td><td>OS-at-T labels drop censored patients instead of using AUC<sub>t</sub></td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; ~+0.03 AUC inflation; partly confounds the predictive-vs-prognostic comparison</td></tr>
+<tr><td>5</td><td>&ldquo;External&rdquo; Chowell_test / MSK1 / MSK2 share institution and era</td><td>PARTIALLY VERIFIED</td><td><strong>MODERATE</strong> &mdash; rescales generalization claim; AUCs unchanged</td></tr>
+<tr><td>6</td><td><code>delong_test</code> omits the paired-AUC covariance term</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; conservative <em>p</em>-values throughout; positive results survive, non-inferiority claims are softer</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">* Novelty unverified. The audit&rsquo;s public-record search (PubPeer, Nature Cancer letters/Matters Arising, GitHub issues on the <code>rootchang/LORIS</code> repository, Retraction Watch, citing-study re-analyses) returned no prior public discussion of these specific findings. They should still be treated as &ldquo;potentially novel&rdquo; pending a more exhaustive manual literature search.</p>
+
+<h2>Reading guide</h2>
+<p>The three MAJOR findings are <em>not</em> claims that LORIS&rsquo;s reported AUCs are wrong. They are claims that three of the structural generalization arguments the paper builds on top of those AUCs &mdash; pan-cancer transfer to novel cancer types (MSK2), NSCLC-specific superiority (clean train/test separation), and 6-feature generalization to Kato/Ravi &mdash; are unsupported on the deposited inputs in their current form. The remaining MODERATE findings shift specific numerical comparisons (the predictive-vs-prognostic AUC margin, the precision of paired-AUC <em>p</em>-values) and a framing claim (&ldquo;external&rdquo; vs. within-MSK validation) without overturning the model&rsquo;s direction of effect.</p>
+
+<p>Findings rated MINOR or NEGLIGIBLE by the impact quantifier are not reproduced here per scope. They cover code-style issues (hardcoded model selection that ignores a CLI argument, an unused worksheet name, a search over a 1-point hyperparameter grid), data-quality blemishes (a TMB cap at 50 in <code>MSK_nonICB</code>, a 39% NaN drop in Vanguri&rsquo;s OS_Event that does not move the AUC, an OS scale apparently in days rather than months in Ravi that does not affect Cox), and statistical-design choices that change the interpretation of supplementary tables but not the headline conclusions.</p>
+
+</body>
+</html>
