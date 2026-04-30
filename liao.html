@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liao 2020 BALF &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>Liao 2020 BALF COVID-19 &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-04-30 &nbsp;|&nbsp;
+  Dataset: 13 BAL samples (4 healthy controls, 3 mild, 6 severe COVID-19), 65,813 cells &nbsp;|&nbsp;
+  Domain: Single-cell RNA-seq of bronchoalveolar lavage in COVID-19 &nbsp;|&nbsp;
+  Code: <a href="https://github.com/zhangzlab/covid_balf" target="_blank" rel="noopener">zhangzlab/covid_balf</a> &nbsp;|&nbsp;
+  Data: <a href="http://cells.ucsc.edu/covid19-balf/nCoV.rds" target="_blank" rel="noopener">UCSC Cell Browser</a> &nbsp;|&nbsp;
+  Paper: <a href="https://www.nature.com/articles/s41591-020-0901-9" target="_blank" rel="noopener">Liao et al., Nature Medicine (2020)</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Multi-agent audit covering code, data honesty, and data facts, followed by independent verification, public-record novelty checking, and impact quantification on the deposited inputs. The full audit produced eighteen findings across reproducibility, transparency, and statistical inference; this report covers only the four whose impact is to <strong>invalidate or substantially weaken specific claims in the paper</strong>. Reproducibility-only failures (deposited code that cannot regenerate a published table or figure), naming-collision risks, and latent bugs that no script in the deposited code currently activates are excluded from this report.<br><br>
+  <strong>Headline:</strong> The paper&rsquo;s direction-of-effect findings on macrophage compositional shift, T-cell exhaustion markers, and cytokine differences across severity may well be real, but the statistical support for them as published is much weaker than the reported <em>p</em>-values suggest. The cohort structure is dominated by two severe patients and one healthy-control sample of different provenance; cell-level <em>p</em>-values inflate group-comparison significance by roughly one hundred orders of magnitude relative to patient-level inference on the same data.
+</div>
+
+<div class="caveat-box">
+  <strong>Numerical caveat.</strong> The integrated Seurat object (<code>nCoV.rds</code>) was not re-fit during this audit; AUC-style or DE-effect-size deltas would require regenerating that object end-to-end. Quantifications below come from the released per-cell annotation tables (<code>all.cell.annotation.meta.txt</code>, <code>myeloid.cell.annotation.meta.txt</code>, <code>NKT.cell.annotation.meta.txt</code>) and the sample-level <code>meta.txt</code>. Treat the <em>p</em>-value comparison in Finding 1 as a proxy on the released composition counts; treat the cohort-structure facts in Findings 2&ndash;4 as exact.
+</div>
+
+<h2>Major findings</h2>
+
+<!-- F1 -->
+<div class="finding major">
+  <div class="finding-title">Finding 1 &mdash; Cell-level differential expression and composition tests treat 65,813 cells as 65,813 independent samples, but the study has 13 patients</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Pseudoreplication &mdash; wrong unit of statistical analysis</span>
+    <span class="meta-label">Location</span><span><code>total_fig.R</code>:178&ndash;204; <code>cytokine_fig.R</code>:68&ndash;79; <code>macrophage_fig.R</code>:74&ndash;78, 144&ndash;151; <code>NKT.R</code>:78&ndash;91, 156, 248&ndash;250</span>
+  </div>
+  <p>Throughout the analysis, group comparisons (HC vs Mild vs Severe) are run with <code>FindAllMarkers(..., test.use='MAST')</code> after setting <code>Idents(...)='group'</code>, so every cell becomes one observation labeled by its patient&rsquo;s clinical group. The composition figure does the same with a per-cluster Welch <em>t</em>-test:</p>
+  <pre>my_comparisons &lt;- list(c("HC","M"), c("M","S"), c("HC","S"))
+pp1 + stat_compare_means(comparisons = my_comparisons, method = "t.test")</pre>
+  <p>Cells from the same patient are correlated &mdash; same genetic background, same infection state, same library prep. The correct unit of analysis is the patient (n = 4 / 3 / 6), not the cell. The authors knew this: <code>NKT.R</code>:260 is the only DE call in the entire codebase that includes <code>latent.vars='orig.ident'</code>, and it is used for exactly one cell type (CD8 T markers). Every other DE call &mdash; cytokine signatures, macrophage subgroup markers, NKT proliferation, all severity contrasts &mdash; omits the patient covariate.</p>
+  <p>On the released composition counts, the macrophage <strong>Mild&nbsp;vs&nbsp;Severe</strong> proportion contrast gives:</p>
+  <ul>
+    <li>Cell-level &chi;<sup>2</sup>: <em>p</em> &asymp; 2 &times; 10<sup>&minus;107</sup></li>
+    <li>Patient-level Mann&ndash;Whitney on per-sample percentages: <em>p</em> &asymp; 0.55</li>
+  </ul>
+  <p>The gap is approximately 106 orders of magnitude in &minus;log<sub>10</sub>(<em>p</em>). Cell-level inference systematically inflates significance by roughly &radic;(N<sub>cells</sub> / N<sub>patients</sub>) in the test statistic, which compounds exponentially in the <em>p</em>-value.</p>
+  <p><strong>Effect on paper claims.</strong> Direction-of-effect statements about macrophage compositional shifts, cytokine signatures, and severity-stratified DE in the paper may be biologically real, but the statistical support reported alongside them does not survive a patient-level analysis with n = 4 / 3 / 6. The headline <em>p</em>-values are not credible at face value, and any claim that depends on a small <em>p</em>-value to clear a multiple-testing threshold needs to be re-evaluated under proper pseudobulk DE (DESeq2/limma per patient&times;cell-type) or a mixed model with patient as a random effect.</p>
+</div>
+
+<!-- F2 -->
+<div class="finding major">
+  <div class="finding-title">Finding 2 &mdash; HC4 (GSM3660650) is an external GEO sample with 51% epithelial composition; integrated into the healthy baseline with no batch covariate</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Cohort heterogeneity &mdash; HC reference dominated by one out-of-protocol sample</span>
+    <span class="meta-label">Location</span><span><code>meta.txt</code> row 4 (<code>sample = GSM3660650</code>); <code>seurat_integration.R</code> &mdash; <code>vars.to.regress = c("nCount_RNA","percent.mito")</code>, no <code>orig.ident</code> or <code>study</code> covariate</span>
+  </div>
+  <p>Three of the four healthy controls (<code>C51</code>, <code>C52</code>, <code>C100</code>) are in-house BAL samples. The fourth, <code>GSM3660650</code>, is a public GEO accession from a different study with a different processing protocol. The composition speaks for itself:</p>
+  <table>
+    <thead><tr><th>Sample</th><th>Total cells</th><th>Macrophages</th><th>Epithelial</th></tr></thead>
+    <tbody>
+      <tr><td>HC1 (C51)</td><td>8,454</td><td>93.6%</td><td>0.15%</td></tr>
+      <tr><td>HC2 (C52)</td><td>8,153</td><td>97.4%</td><td>0.40%</td></tr>
+      <tr><td>HC3 (C100)</td><td>2,566</td><td>77.9%</td><td>0.51%</td></tr>
+      <tr><td><strong>HC4 (GSM3660650)</strong></td><td>2,710</td><td>25.2%</td><td><strong>51.0%</strong></td></tr>
+    </tbody>
+  </table>
+  <p>The mean HC epithelial fraction is <strong>13.0% with HC4 included, 0.4% without</strong> &mdash; a roughly 32-fold inflation driven by a single sample. Mean macrophage fraction shifts from 89.6% to 73.5% by the same mechanism. <code>seurat_integration.R</code> regresses out <code>nCount_RNA</code> and <code>percent.mito</code> in <code>ScaleData</code>; it does <em>not</em> include sample, study, or protocol as a covariate at any stage. CCA-anchor integration (<code>FindIntegrationAnchors</code> at line 137) cannot distinguish &ldquo;remove technical batch noise&rdquo; from &ldquo;remove HC4-specific biology&rdquo; when HC4 is the only carrier of a real signal in the HC arm.</p>
+  <p>GitHub issue #22 on the deposited repository contains a partial, informal acknowledgment from the authors that healthy samples were CD45<sup>+</sup>-enriched while disease samples were total cells &mdash; an admission that HC and disease arms are not directly comparable on cell-type proportions. This caveat appears nowhere in the paper text or figure legends.</p>
+  <p><strong>Effect on paper claims.</strong> Any composition comparison that uses HC as a baseline &mdash; epithelial expansion in COVID, macrophage depletion in healthy, T-cell prevalence vs healthy &mdash; has an effective HC sample size of n &asymp; 1 for the epithelial dimension and is partially HC4-driven for the macrophage dimension. &ldquo;Epithelial cells appear in COVID lung and not in healthy&rdquo; reduces, on the deposited inputs, to a comparison against three CD45<sup>+</sup>-enriched samples plus one out-of-protocol sample. The structural argument that HC4 makes the HC arm comparable to the COVID arm is unsupported.</p>
+</div>
+
+<!-- F3 -->
+<div class="finding major">
+  <div class="finding-title">Finding 3 &mdash; The severe cohort (n = 6 patients) contributes 78% of severe-group cells from two patients</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Cohort imbalance &mdash; severity claims dominated by two patients</span>
+    <span class="meta-label">Location</span><span><code>all.cell.annotation.meta.txt</code> (per-sample cell counts); affects every cell-level comparison stratified by group</span>
+  </div>
+  <p>Per-sample cell counts in the severe arm:</p>
+  <table>
+    <thead><tr><th>Sample</th><th>Cells</th><th>% of severe</th><th>Cumulative</th></tr></thead>
+    <tbody>
+      <tr><td>S2 (C143)</td><td>16,883</td><td><strong>46.1%</strong></td><td>46.1%</td></tr>
+      <tr><td>S1 (C145)</td><td>11,762</td><td><strong>32.1%</strong></td><td><strong>78.2%</strong></td></tr>
+      <tr><td>S6 (C152)</td><td>2,897</td><td>7.9%</td><td>86.1%</td></tr>
+      <tr><td>S5 (C149)</td><td>2,069</td><td>5.7%</td><td>91.8%</td></tr>
+      <tr><td>S4 (C148)</td><td>1,716</td><td>4.7%</td><td>96.5%</td></tr>
+      <tr><td>S3 (C146)</td><td>1,292</td><td>3.5%</td><td>100%</td></tr>
+    </tbody>
+  </table>
+  <p>The published narrative treats severe COVID as an n = 6 group. At the cell level &mdash; which is the level at which DE, marker tests, and cytokine signatures are computed (see Finding 1) &mdash; severe COVID is essentially two patients. S2 alone contributes 46% of the cellular evidence; the four lowest-cell-count severe patients combined contribute 22%.</p>
+  <p>The within-severe heterogeneity is real biology: viral load (<code>nCoV_mean</code> in <code>meta.txt</code>) ranges from 0.003 (S4) to 0.750 (S3) across the six patients &mdash; a 250-fold spread &mdash; and macrophage subgroup composition varies markedly across severe patients (per the released <code>myeloid.cell.annotation.meta.txt</code> Group1&ndash;4 counts).</p>
+  <p><strong>Effect on paper claims.</strong> Combined with Finding 1, every &ldquo;severe COVID&rdquo; cell-level finding is essentially a two-patient finding generalised to a six-patient cohort. The macrophage inflammatory shift, the cytokine signature, and the T-cell exhaustion profile reported for severe disease all need to be qualified as &ldquo;observed in two of six severe patients with very high cell yield, with limited cellular evidence from the remaining four.&rdquo; This is the same n-effective &asymp; 1&ndash;2 problem as Finding 2, on the disease side.</p>
+</div>
+
+<!-- F4 -->
+<div class="finding major">
+  <div class="finding-title">Finding 4 &mdash; The mild cohort (n = 3) is effectively n = 2 &mdash; M3 has 363 cells (~10&times; fewer than M1 / M2)</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Cohort imbalance &mdash; small-arm leverage from one outlier sample</span>
+    <span class="meta-label">Location</span><span><code>all.cell.annotation.meta.txt</code> (per-sample counts); <code>myeloid.cell.annotation.meta.txt</code>; <code>NKT.cell.annotation.meta.txt</code></span>
+  </div>
+  <p>Per-sample cell counts in the mild arm:</p>
+  <table>
+    <thead><tr><th>Sample</th><th>All cells</th><th>Macrophages</th><th>NKT cells</th><th>Macrophage %</th></tr></thead>
+    <tbody>
+      <tr><td>M1 (C141)</td><td>3,539</td><td>2,120</td><td>1,111</td><td>61.5%</td></tr>
+      <tr><td>M2 (C142)</td><td>3,409</td><td>2,024</td><td>1,147</td><td>60.4%</td></tr>
+      <tr><td><strong>M3 (C144)</strong></td><td><strong>363</strong></td><td><strong>113</strong></td><td><strong>175</strong></td><td><strong>32.0%</strong></td></tr>
+    </tbody>
+  </table>
+  <p>M3 is consistent with sample-quality issues acknowledged informally by the authors in repo issue #6 (&ldquo;for M3, the sample quality is not so good and we harvest fewer cells in our experiment&rdquo;). The statistical-power consequence is not discussed anywhere in the published paper. With n = 3 in the mild arm, M3 is leverage-dominant on every per-sample average:</p>
+  <ul>
+    <li>Macrophage proportion variance with M3 included: <strong>0.0281</strong>; without M3: <strong>0.0001</strong> &mdash; M3 inflates within-mild variance ~280&times;.</li>
+    <li>Per-sample cell-type proportion estimates from M3 carry &plusmn;~5% Monte&nbsp;Carlo noise just from the small denominator, which is comparable to the reported HC-vs-Mild and Mild-vs-Severe effect sizes.</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> Any per-sample comparison involving the mild arm (composition Welch <em>t</em>-tests in <code>total_fig.R</code>:178&ndash;204; per-cluster mild-vs-X breakdowns) is dominated by M1 and M2, with M3 either dragging the mean toward zero or inflating variance enough to suppress significance. The paper&rsquo;s &ldquo;mild as an intermediate phenotype between HC and severe&rdquo; framing rests on a 2-patient effective sample, not 3.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Cell-level DE and composition tests pseudoreplicate &mdash; cells treated as independent across n = 13 patients</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; macrophage M-vs-S contrast: cell-level <em>p</em> &asymp; 2&thinsp;&times;&thinsp;10<sup>&minus;107</sup> vs patient-level <em>p</em> &asymp; 0.55. Reported <em>p</em>-values inflate significance by ~100 orders of magnitude</td></tr>
+<tr><td>2</td><td>HC4 = GSM3660650 (external GEO sample, 51% epithelial) integrated into HC arm with no batch covariate</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; HC epithelial baseline inflates ~32&times; with HC4 included; n-effective &asymp; 1 for HC composition</td></tr>
+<tr><td>3</td><td>Severe arm cellular evidence dominated by S2 (46%) + S1 (32%) = 78% from 2 of 6 patients</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; cell-level &ldquo;severe COVID&rdquo; findings are 2-patient findings; remaining 4 severe patients contribute 22% combined</td></tr>
+<tr><td>4</td><td>Mild arm effectively n = 2 &mdash; M3 has 363 cells (~10&times; fewer); inflates within-mild variance ~280&times;</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; per-sample mild comparisons dominated by M1 / M2; mild-as-intermediate framing has 2-patient effective n</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">* Novelty unverified. The audit&rsquo;s public-record search (PubPeer, Nature Medicine letters / Matters Arising, the deposited repository&rsquo;s 23 GitHub issues, Retraction Watch, citing-study reanalyses on bioRxiv and Google Scholar) returned no prior public reports of these specific findings. Repo issues #6 and #22 contain partial, informal acknowledgments of related concerns (M3 sample quality; HC CD45<sup>+</sup>-only enrichment) that the published paper does not reproduce. Treat as &ldquo;potentially novel&rdquo; pending more exhaustive manual literature search.</p>
+
+<h2>Reading guide</h2>
+<p>The four MAJOR findings are <em>not</em> claims that the deposited cellular annotations are incorrect, that the macrophage subgroups don&rsquo;t exist, or that severe COVID does not differ from healthy lung at the molecular level. They are claims that the <strong>statistical inference structure</strong> the paper builds on top of those cellular observations does not survive proper patient-level analysis on the released cohort. The <em>direction</em> of the reported effects may well replicate; the <em>p</em>-values, the &ldquo;n = 6 severe / n = 3 mild&rdquo; framing, and the comparability of the HC arm to the disease arms do not.</p>
+
+<p>The four findings are not independent: they compound. Finding 1 says cell-level <em>p</em>-values are inflated by ~100 orders of magnitude relative to patient-level inference. Findings 2&ndash;4 say the patient-level n on which a corrected analysis would have to rest is closer to 1&ndash;2 per arm than the reported 4 / 3 / 6. The combined consequence is that none of the headline severity-axis claims (macrophage shift, cytokine signature, T-cell exhaustion) carries the level of statistical support a reader would infer from the reported significance levels.</p>
+
+<p>Findings rated MODERATE, MINOR, or NEGLIGIBLE by the impact quantifier are not reproduced here per scope. They include reproducibility failures (deposited code that cannot regenerate published outputs &mdash; subset filters on group values that do not exist in the data; a UMI threshold variable that references a column name that does not exist; a label-rename mismatch that drops macrophages from a composition figure; a script that uses a variable before it is defined; a TSV round-trip that drops sample/group columns), transparency issues (the &ldquo;myeloid&rdquo; annotation file released with the paper contains only macrophages with anonymised <code>Group1&ndash;4</code> labels; the healthy-control viral-read counts are hardcoded to zero rather than measured), latent bugs that no script in the deposited code currently activates (a per-cell viral-detection column treated by future re-users as patient-level; a no-op doublet-removal step on an upstream-deleted cluster; a string-mismatch filter that leaves 189 &ldquo;Uncertain&rdquo; cells in the NKT analysis), and naming-collision risks that do not produce numerical errors in the deposited code (label vocabularies <code>O1&ndash;3</code> / <code>C1&ndash;5</code> overlapping with original sample IDs <code>C100</code>, <code>C141</code>, etc.). These are documented in the audit transcript but do not, on their own, invalidate any paper-level claim.</p>
+
+</body>
+</html>
