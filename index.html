@@ -40,6 +40,19 @@
 </p>
 
 <div class="audit">
+  <h2><a href="schadendorf.html">Schadendorf 2019 PD1 melanoma &mdash; Liu et al., Nature Medicine (2019)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Anti-PD1 response prediction in metastatic melanoma (WES + RNA-seq + clinical, n=144)</span>
+    <span>Generated: 2026-04-30</span>
+  </div>
+  <p class="summary">Integrative molecular and clinical model of anti-PD1 outcomes (60 prior-CTLA4 + 84 ipi-naive). Audit finds four claim-invalidating issues plus five magnitude-shifting issues: Fig&nbsp;5d&rsquo;s &ldquo;Cross-Val AUC = 0.73&rdquo; is a hardcoded constant (actual cv=10 ~0.42, below random), Fig&nbsp;5e/f&rsquo;s Kaplan&ndash;Meier &ldquo;validation&rdquo; uses in-sample predictions (postIpi PFS log-rank flips from <em>p</em>=0.0035 to <em>p</em>=0.21 NS under held-out scoring), <code>Age</code> is a perfect 1:1 proxy for cohort assignment so every ipi-vs-naive contrast is confounded with site, and Fig&nbsp;2g&rsquo;s ~700 per-gene <em>p</em>-values have no multiple-testing correction (zero genes survive BH-FDR <em>q</em>&lt;0.05).</p>
+  <div class="tags">
+    <span class="tag tag-major">4 major</span>
+    <span class="tag tag-moderate">5 moderate</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="ressler.html">NeoBCC &mdash; Ressler et al., Nature Cancer (2025)</a></h2>
   <div class="meta-row">
     <span>Domain: Neoadjuvant T-VEC (oncolytic HSV-1) in basal cell carcinoma (single-cell RNA + TCR/BCR)</span>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schadendorf 2019 PD1 melanoma &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>Schadendorf 2019 PD1 melanoma &mdash; Liu et al., Nature Medicine (2019)</h1>
+<div class="meta">
+  Generated: 2026-04-30 &nbsp;|&nbsp;
+  Dataset: 144 metastatic-melanoma patients on anti-PD1 (60 prior-CTLA4 / 84 ipi-naive); WES + RNA-seq + clinical &nbsp;|&nbsp;
+  Domain: Anti-PD1 response prediction in metastatic melanoma &nbsp;|&nbsp;
+  Code: <a href="https://github.com/vanallenlab/schadendorf-pd1" target="_blank" rel="noopener">vanallenlab/schadendorf-pd1</a> &nbsp;|&nbsp;
+  Notebook: <code>code/schadendorf-pd1/Figures-NatMed.ipynb</code> &nbsp;|&nbsp;
+  Paper: <a href="https://doi.org/10.1038/s41591-019-0654-5" target="_blank" rel="noopener">Liu et al., Nature Medicine (2019)</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Multi-agent audit covering code, data honesty, and data facts, followed by independent verification, public-record novelty checking, and impact quantification (rerun where possible, otherwise proxy). The full audit produced a larger set of findings; this report covers only those whose impact on the paper&rsquo;s reported results is rated <strong>MAJOR</strong> or <strong>MODERATE</strong>.<br><br>
+  <strong>Headline:</strong> The paper&rsquo;s out-of-sample evidence for an MHC-II ssGSEA-based anti-PD1 response model in ipi-experienced melanoma does not exist as described. Figure&nbsp;5d&rsquo;s reported &ldquo;Cross-Val AUC = 0.73&rdquo; is a hardcoded constant in the notebook; the actual cv=10 AUC on the published features is approximately <strong>0.42</strong>. Figure&nbsp;5e/f&rsquo;s Kaplan&ndash;Meier &ldquo;validation&rdquo; uses in-sample predictions, and switching to held-out predictions flips the postIpi PFS log-rank from <em>p</em>=0.0035 to <em>p</em>=0.21 (NS). Every ipi-experienced vs ipi-naive comparison in the paper is fully confounded with site/cohort: the <code>Age</code> column is NaN for all 60 prior-CTLA4 patients and populated for all 84 ipi-naive, with zero overlap &mdash; a perfect 1:1 proxy for cohort assignment. Figure&nbsp;2g&rsquo;s differential-expression volcano of ~700 per-gene <em>p</em>-values has no multiple-testing correction; under BH-FDR <em>q</em>&lt;0.05, zero genes survive.
+</div>
+
+<div class="caveat-box">
+  <strong>Numerical caveats.</strong> Cross-validation AUC numbers below are means across 20 random seeds at cv=10 on the deposited features; ranges are reported where they affect interpretation. The Mann-Whitney <em>p</em>-value re-derivations use the unmodified two-sided test on the deposited values. Public-record search (PubPeer, Nature Medicine letters / Matters Arising, GitHub issues on the deposited repository, Retraction Watch, citing-study reanalyses) returned no prior public discussion of the findings below; the only published correction on record is an author-name erratum. Findings should still be treated as &ldquo;potentially novel&rdquo; pending a more exhaustive manual literature search.
+</div>
+
+<h2>Major findings</h2>
+
+<!-- F-MAJOR-1 -->
+<div class="finding major">
+  <div class="finding-title">Finding 1 &mdash; Figure&nbsp;5d&rsquo;s &ldquo;Cross-Val AUC = 0.73&rdquo; is a hardcoded constant; the actual cv=10 AUC on the published features is ~0.42</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Reported figure value not derived from the data it claims to summarize</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Cell 79 (Fig 5d block)</span>
+  </div>
+  <p>The figure is rendered with a fixed numeric literal:</p>
+  <pre>crossval_mean = 0.73
+# &hellip; plotted as the &ldquo;Cross-Val AUC&rdquo; annotation in Fig 5d &hellip;</pre>
+  <p>Re-running the same logistic specification with <code>sklearn</code>&rsquo;s <code>cross_val_score</code> at cv=10 across 20 random seeds on the deposited ipi-naive features gives a mean AUC of approximately <strong>0.42</strong>, with a per-seed range of 0.29&ndash;0.49. The published number is not a function of the deposited data: it is a constant.</p>
+  <p><strong>Effect on paper claims.</strong> Figure&nbsp;5d is presented as a held-out cross-validation performance estimate for the ipi-naive predictive model. The deposited code and data do not produce that number, and the value that they do produce is below the random-classifier line. The figure must be redrawn or retracted; the &ldquo;0.73 cross-val AUC&rdquo; is not load-bearing evidence for the model.</p>
+</div>
+
+<!-- F-MAJOR-2 -->
+<div class="finding major">
+  <div class="finding-title">Finding 2 &mdash; Figure&nbsp;5e/f Kaplan&ndash;Meier &ldquo;validation&rdquo; uses in-sample predictions; held-out scoring flips the postIpi PFS log-rank from <em>p</em>=0.0035 to <em>p</em>=0.21 (NS)</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>In-sample evaluation framed as out-of-sample validation</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Cell 78&ndash;80 (Fig 5e/f block)</span>
+  </div>
+  <p>The logistic model in Cell 78 is fit on <code>outcome = (BR == 'PD')</code>. The same patients are then median-split on their <em>own</em> in-sample predicted scores; Cells 79&ndash;80 plot Kaplan&ndash;Meier curves for the resulting two groups using <code>progressed</code>/<code>dead</code> as the events. Because all 65 PD patients have <code>progressed=1</code>, the median split on in-sample scores is mechanically a re-display of the training labels rather than out-of-sample discrimination.</p>
+  <p>Re-running the same model under <code>sklearn.model_selection.cross_val_predict</code> (so each patient&rsquo;s score is generated by a model that did not see them) and re-running the same log-rank test on the same KM construction:</p>
+  <ul>
+    <li>postIpi PFS log-rank: <strong><em>p</em> = 0.0035 &rarr; <em>p</em> = 0.21</strong> (median across seeds; only 3 of 20 seeds reach <em>p</em>&lt;0.05)</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> Figure&nbsp;5e/f is presented in the manuscript as out-of-sample evidence that the ipi-experienced response model stratifies survival. Held-out scoring on the deposited inputs does not support that claim. Either the panel needs to be redone with cross-validated predictions and the substantially weaker (NS) result reported, or the &ldquo;validation&rdquo; framing of the panel needs to be removed.</p>
+</div>
+
+<!-- F-MAJOR-3 -->
+<div class="finding major">
+  <div class="finding-title">Finding 3 &mdash; <code>Age</code> is a perfect 1:1 proxy for cohort assignment; every ipi-experienced vs ipi-naive comparison is fully confounded with site/dataset</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Two-source dataset assembly with a structural cohort fingerprint</span>
+    <span class="meta-label">Location</span><span>Clinical table (deposited): <code>Age</code>, <code>priorCTLA4</code>, <code>daysBiopsyAfterIpiStart</code></span>
+  </div>
+  <p>Verified directly on the deposited clinical table:</p>
+  <ul>
+    <li><code>Age</code> is <code>NaN</code> for <strong>all 60</strong> patients with <code>priorCTLA4 = 1</code>.</li>
+    <li><code>Age</code> is populated for <strong>all 84</strong> patients with <code>priorCTLA4 = 0</code>.</li>
+    <li>Zero overlap. The two cohorts can be perfectly separated with a single field that is supposed to be a clinical covariate.</li>
+  </ul>
+  <p>Additionally, <code>daysBiopsyAfterIpiStart</code> is in strict functional dependency with <code>Age</code> (37 distinct ages, each mapped to exactly one distinct value of <code>daysBiopsyAfterIpiStart</code>), which is the fingerprint of two clinical tables joined patient-by-patient from two different sources rather than a single cohort with consistent metadata.</p>
+  <p><strong>Effect on paper claims.</strong> The paper&rsquo;s ipi-experienced vs ipi-naive comparisons (Figures 3, 4, 5b/c) are presented as comparisons of biology under two prior-treatment regimes within a single melanoma cohort. On the deposited inputs they are simultaneously comparisons of two different patient registries with disjoint per-patient metadata; the &ldquo;ipi exposure changes biomarker X&rdquo; conclusion and the &ldquo;dataset/site changes biomarker X&rdquo; conclusion are not separable. The confounding is not addressed in the manuscript.</p>
+</div>
+
+<!-- F-MAJOR-4 -->
+<div class="finding major">
+  <div class="finding-title">Finding 4 &mdash; Figure&nbsp;2g volcano (~700 per-gene <em>p</em>-values) has no multiple-testing correction; zero genes survive BH-FDR <em>q</em>&lt;0.05</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Differential expression panel with no multiple-testing correction</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Fig 2g block (per-gene Mann&ndash;Whitney loop)</span>
+  </div>
+  <p>Figure&nbsp;2g is a per-gene volcano of Mann&ndash;Whitney <em>p</em>-values for ~700 genes between two response groups, plotted with the raw <em>p</em>&lt;0.05 threshold and no Benjamini&ndash;Hochberg, Bonferroni, or permutation-based correction. Re-running the same per-gene loop on the deposited expression matrix and applying defensible corrections:</p>
+  <ul>
+    <li>BH-FDR <em>q</em>&lt;0.05: <strong>0 genes</strong></li>
+    <li>Bonferroni <em>p</em>&lt;0.05: <strong>0 genes</strong></li>
+    <li>BH-FDR <em>q</em>&lt;0.20 (already lenient): <strong>1 gene</strong> (NACA2)</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> The panel is presented as a differential-expression signal between response groups. Under any defensible multiple-testing correction the panel contains no signal; what the panel shows is the family-wise expectation for ~700 simultaneous tests at the unadjusted 5% threshold. The panel should either be removed or recast as exploratory hypothesis generation rather than a differential-expression result.</p>
+</div>
+
+<h2>Moderate findings</h2>
+
+<!-- F-MOD-1 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; <code>TestMedian</code> doubles two-sided Mann&ndash;Whitney <em>p</em>-values via a stale scipy workaround; magnitudes shift across the paper, including the load-bearing Fig 3d MHC-II result</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Stale numerical workaround inflates reported <em>p</em>-values</span>
+    <span class="meta-label">Location</span><span><code>TestMedian</code> helper used throughout the notebook</span>
+  </div>
+  <p>The helper computes two-sided <em>p</em>-values as:</p>
+  <pre>p = scipy.stats.mannwhitneyu(a, b)[1] * 2</pre>
+  <p>This was a workaround for scipy &lt;0.18, where <code>mannwhitneyu</code> returned a one-sided <em>p</em> by default. Modern scipy already returns a two-sided <em>p</em> by default. The remaining <code>* 2</code> doubles a correct value, inflating every reported Mann-Whitney <em>p</em> in the paper.</p>
+  <p>Across 174 R-vs-PD comparisons in the notebook, <strong>12 panels flip across the &alpha;=0.05 threshold</strong> when the spurious <code>* 2</code> is removed. Notably, the load-bearing Fig 3d &ldquo;MHC-II ssGSEA, postIpi R vs PD&rdquo; comparison shifts:</p>
+  <ul>
+    <li>Published: <em>p</em> = 0.056 (reported as borderline / trend)</li>
+    <li>Corrected: <em>p</em> = 0.028</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> The directions of conclusions are preserved or strengthened &mdash; this is a conservative bias for the paper&rsquo;s positive results. But every Mann-Whitney <em>p</em> in the manuscript and supplements is a numerical over-estimate, and twelve panel-level claims that did not cross &alpha;=0.05 actually do once the stale <code>* 2</code> is removed (or vice versa). Readers comparing the paper&rsquo;s exact reported <em>p</em>-values against meta-analyses or future re-runs will see different numbers.</p>
+</div>
+
+<!-- F-MOD-2 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 6 &mdash; &ldquo;Ipi-Experienced&rdquo; has two incompatible operational definitions; Fig&nbsp;3b and Figs&nbsp;3c&ndash;e/4/5 do not refer to the same patients</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Cohort label re-used with two different membership rules</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Fig 3b vs Fig 3c&ndash;e / Fig 4 / Fig 5 blocks</span>
+  </div>
+  <p>The label &ldquo;Ipi-Experienced&rdquo; is used in two operationally different ways:</p>
+  <ul>
+    <li>Fig 3b uses <code>priorCTLA4 == 1</code>: <strong>n = 60</strong> (anyone with prior CTLA-4 exposure, irrespective of biopsy timing).</li>
+    <li>Figs 3c&ndash;e, 4, and 5 use <code>postIpi == 1</code>: <strong>n = 45</strong> (patients with prior CTLA-4 <em>and</em> a biopsy taken after ipi start).</li>
+  </ul>
+  <p>The two definitions differ by 15 patients (the 14 <code>preIpi</code> patients plus the silently-dropped Patient1). On Fig 5b, the ipi-experienced AUC depends on which definition is used: <code>postIpi</code> in-sample specificity 0.824 vs <code>priorCTLA4</code> in-sample specificity 0.796.</p>
+  <p><strong>Effect on paper claims.</strong> Readers naturally assume Fig 3b and Fig 5b refer to the same set of ipi-experienced patients; they do not. The Fig 5b headline AUC of the ipi-experienced model is a function of the cohort definition used, and the manuscript does not flag the switch. Independent of any other finding, this means several of the cross-figure consistency arguments in the paper compare statistics on overlapping but non-identical cohorts.</p>
+</div>
+
+<!-- F-MOD-3 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 7 &mdash; RNA-seq dropout is 2.05&times; higher in ipi-experienced than ipi-naive, exactly along the comparison axis the paper makes</div>
+  <div class="badges">
+    <span class="badge partial">PARTIALLY VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Differential missingness asymmetric to the comparison being tested</span>
+    <span class="meta-label">Location</span><span>Inner joins between RNA-seq and clinical at Cell 40</span>
+  </div>
+  <p>RNA-seq drop-out rates differ by cohort:</p>
+  <ul>
+    <li>postIpi RNA dropout: <strong>11/45 (24.4%)</strong></li>
+    <li>noIpi RNA dropout: 10/84 (11.9%)</li>
+    <li>Ratio: <strong>2.05&times; higher in the ipi-experienced cohort</strong></li>
+  </ul>
+  <p>The <code>pd.merge</code> calls in Cell 40 use inner joins between the clinical table and the RNA-seq matrix. Patients without an RNA-seq column or without a clinical flag are silently dropped, with no warning or accounting in the figure footnotes.</p>
+  <p>(Verification status: the audit re-derivation gives 10/84 for the noIpi denominator where the manuscript implies 8/84; the qualitative pattern &mdash; substantially higher dropout in the ipi-experienced arm &mdash; holds either way.)</p>
+  <p><strong>Effect on paper claims.</strong> Every RNA-based comparison between ipi-experienced and ipi-naive is performed after silently removing 2&times; more patients from the ipi-experienced arm. If the missingness is non-random with respect to response (e.g. patients who failed early are less likely to have a usable post-treatment biopsy and therefore less likely to retain RNA), then the ipi-vs-naive RNA differences reported in Figs&nbsp;2&ndash;4 are confounded with selection.</p>
+</div>
+
+<!-- F-MOD-4 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 8 &mdash; Figure&nbsp;3d&rsquo;s single nominal <em>p</em>=0.03 is the only direct evidence supporting the use of MHC-II in the Fig&nbsp;5a/b model; the validation cohort (Fig&nbsp;3g) is NS</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Single underpowered comparison anchors a downstream model feature</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Fig 3d / Fig 3g blocks</span>
+  </div>
+  <p>The argument for using MHC-II ssGSEA as an input to the Fig&nbsp;5a/b ipi-experienced response model rests on Fig 3d&rsquo;s single nominal Mann-Whitney <em>p</em>=0.03 between R (n=11) and PD (n=16). The independent validation cohort in Fig&nbsp;3g (n=15) does not reach significance: <em>p</em>=0.33.</p>
+  <p>With Finding&nbsp;5&rsquo;s <code>* 2</code> fix, the Fig 3d <em>p</em> becomes 0.028 rather than 0.056, but at panel-level multiple testing the survivors thin out, and combined with Findings&nbsp;1 and 2 (no working out-of-sample anchor for the model), the chain of evidence reduces to a single underpowered comparison in the discovery cohort that is not reproduced in validation.</p>
+  <p><strong>Effect on paper claims.</strong> The MHC-II ssGSEA &rarr; ipi-experienced response narrative is built on Fig 3d&nbsp;+ Fig 5a/b&nbsp;+ Fig 5e/f. Findings 1, 2, and the present finding remove the out-of-sample legs; what remains is a single nominal <em>p</em>-value of 0.03 in n=27 that does not replicate at <em>n</em>=15.</p>
+</div>
+
+<!-- F-MOD-5 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 9 &mdash; In-sample AUC and CV &ldquo;validation&rdquo; AUC are produced by different estimators (statsmodels Logit, no regularization vs. sklearn LogisticRegression, default L2)</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Different estimators used for the in-sample and cross-validated reports of the &ldquo;same&rdquo; model</span>
+    <span class="meta-label">Location</span><span><code>Figures-NatMed.ipynb</code> Cell 78 (in-sample fit) vs Cell 79 (CV)</span>
+  </div>
+  <p>The in-sample AUC reported in the figure ROC curves is produced by <code>statsmodels.Logit</code> (no regularization, MLE coefficients). The cross-validated AUC reported alongside it is produced by <code>sklearn.LogisticRegression</code> at default settings, which applies an L2 penalty with <code>C=1.0</code>. Because the input feature set mixes raw MHC-II ssGSEA values (~thousands) with binary 0/1 dummies, the L2 penalty shrinks coefficients along axes of vastly different scales unequally; in particular the MHC-II coefficient under L2 shrinks far less than smaller-scale terms.</p>
+  <p>The reported in-sample AUC and the &ldquo;same model&rsquo;s&rdquo; cross-validated AUC are therefore not from the same estimator; the ROC curves in Fig&nbsp;5b are not the unregularized counterparts of the cross-validation result quoted nearby (the cross-validation result that, per Finding&nbsp;1, is itself hardcoded).</p>
+  <p><strong>Effect on paper claims.</strong> The &ldquo;in-sample 0.85+, CV 0.73&rdquo; pairing presented in Fig&nbsp;5 is a between-estimator comparison, not a generalization gap measurement. Even without Findings 1&ndash;2, this would mean readers cannot interpret the AUC drop from in-sample to CV as evidence of generalization or its absence: the two numbers come from different fits.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Fig&nbsp;5d &ldquo;Cross-Val AUC = 0.73&rdquo; is a hardcoded constant; actual cv=10 ~0.42</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; figure must be redrawn or retracted; below random-classifier line</td></tr>
+<tr><td>2</td><td>Fig&nbsp;5e/f KM &ldquo;validation&rdquo; uses in-sample predictions; held-out flips postIpi PFS log-rank to <em>p</em>=0.21 (NS)</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; the only reported out-of-sample evidence for the ipi-experienced model does not exist</td></tr>
+<tr><td>3</td><td><code>Age</code> is a perfect 1:1 proxy for <code>priorCTLA4</code>; ipi-vs-naive comparisons fully confounded with site</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; every prior-treatment-regime claim is simultaneously a dataset-source claim</td></tr>
+<tr><td>4</td><td>Fig&nbsp;2g volcano of ~700 <em>p</em>-values has no MTC; 0 genes survive BH-FDR <em>q</em>&lt;0.05</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; differential-expression panel contains no signal under any defensible correction</td></tr>
+<tr><td>5</td><td>Mann-Whitney <code>p * 2</code> via stale scipy &lt;0.18 workaround; 12 panels flip across &alpha;=0.05</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; conservative bias; magnitudes wrong throughout, including Fig&nbsp;3d MHC-II 0.056&rarr;0.028</td></tr>
+<tr><td>6</td><td>&ldquo;Ipi-Experienced&rdquo; has two incompatible definitions (priorCTLA4 n=60 vs postIpi n=45)</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; cross-figure cohort consistency arguments compare non-identical cohorts</td></tr>
+<tr><td>7</td><td>RNA-seq dropout 24.4% (postIpi) vs 11.9% (noIpi); 2.05&times; along the comparison</td><td>PARTIALLY VERIFIED</td><td><strong>MODERATE</strong> &mdash; ipi-vs-naive RNA differences confounded with selection</td></tr>
+<tr><td>8</td><td>Fig&nbsp;3d <em>p</em>=0.03 (n=27) is the only direct evidence for MHC-II in Fig&nbsp;5; Fig&nbsp;3g validation NS</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; remaining MHC-II evidence is a single underpowered nominal <em>p</em></td></tr>
+<tr><td>9</td><td>In-sample (statsmodels, unregularized) and CV (sklearn, L2) AUCs are not from the same estimator</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; in-sample-vs-CV gap is a between-estimator artefact, not a generalization measurement</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">* Novelty unverified. The audit&rsquo;s public-record search (PubPeer, Nature Medicine letters / Matters Arising, GitHub issues on the deposited repository, Retraction Watch, citing-study reanalyses) returned no prior public discussion of these specific findings. The only published correction on record for this paper is an author-name erratum. They should still be treated as &ldquo;potentially novel&rdquo; pending a more exhaustive manual literature search.</p>
+
+<h2>Reading guide</h2>
+<p>The four MAJOR findings are not claims that the paper&rsquo;s biological hypothesis is false. They are claims that three of the four pieces of out-of-sample evidence the paper offers for its anti-PD1 response model in ipi-experienced melanoma do not survive a re-derivation on the deposited inputs (Findings 1, 2, 9), and that the headline differential-expression panel and the headline ipi-vs-naive contrasts are statistically and structurally unsupported (Findings 4, 3). The MHC-II direction-of-effect that the paper builds on may still be correct &mdash; Finding 5 actually <em>strengthens</em> the load-bearing Fig 3d <em>p</em>-value &mdash; but the manuscript&rsquo;s case for it being predictive, generalizable, and orthogonal to cohort source is not supported by the deposited code and data as currently reported.</p>
+
+<p>What changes if these findings are addressed: Fig&nbsp;5d redrawn or retracted; Fig&nbsp;5e/f redone with held-out predictions and the much weaker (NS) postIpi PFS result reported; Fig&nbsp;2g recast as exploratory or removed; every ipi-vs-naive comparison disclosed as confounded with cohort source until Age-imputation for the prior-CTLA4 arm is resolved; every Mann-Whitney <em>p</em> in the manuscript and supplements recomputed without the stale <code>* 2</code>.</p>
+
+<p>Findings rated MINOR or NEGLIGIBLE by the impact quantifier are not reproduced here per scope. They cover code-pattern issues that do not change reported conclusions (an explicit <code>intercept</code> column passed alongside <code>fit_intercept=True</code>; cv=5 in Fig&nbsp;5b vs cv=10 in Fig&nbsp;5d; days-to-months conversion using <code>/30</code> rather than <code>/30.44</code>; brittle <code>LN_Met_1.0</code> dummy column name; Patient1 silently dropped from ipi-stratified analyses with negligible AUC effect at n=1), data-quality blemishes (free-text variants in <code>IOTherapy</code> and <code>Histology</code>; mixed dtypes in <code>LDH_Elevated</code>, <code>cyclesOnTherapy</code>, <code>steroidsGT10mgDaily</code>; <code>txOngoing=1</code> with <code>dead=1</code> logical impossibilities; an LDH unit/threshold mismatch; biopsy-site mislabels; a Patient74&harr;Patient154 swap between supplements that does not affect any reported test; one refuted finding about duplicate gene-symbol rows that the deposited file does not in fact contain), reproducibility issues (Python-2 print statements; missing input files referenced by the notebook), and stylistic choices that change the interpretation of supplementary tables but not headline conclusions (raw ssGSEA projection scores rather than normalized NES; postIpi cohort pooling of acute pharmacodynamic and chronic post-progression timepoints under a single &ldquo;post-ipi tumor microenvironment&rdquo; label).</p>
+
+</body>
+</html>
