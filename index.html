@@ -40,6 +40,19 @@
 </p>
 
 <div class="audit">
+  <h2><a href="ressler.html">NeoBCC &mdash; Ressler et al., Nature Cancer (2025)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Neoadjuvant T-VEC (oncolytic HSV-1) in basal cell carcinoma (single-cell RNA + TCR/BCR)</span>
+    <span>Generated: 2026-04-30</span>
+  </div>
+  <p class="summary">Twelve post-treatment scRNA-seq samples (GSE268728) supporting Figures 3&ndash;5 and Extended Data Figures&nbsp;6&ndash;10. Audit finds the WHO clinical-response groups in the analysis code disagree with the repo&rsquo;s own metadata for 4 of 12 patients &mdash; the &ldquo;PR&rdquo; and &ldquo;SD&rdquo; groups in EDF9 are 50/50 mixtures of the two true categories &mdash; plus six moderate findings: a cell-barcode regex that silently drops 9.6% of cells from clonotype joins, Wilcoxon tests run at the test floor with no FDR correction, NA propagation that makes Fig&nbsp;4d&rsquo;s <em>P</em>=0.029 fragile to a single missing patient, small-sample patient weighted equally with median patients, alpha-only McPAS join, and a dead <code>stat_compare_means</code> comparison list in EDF10.</p>
+  <div class="tags">
+    <span class="tag tag-major">1 major</span>
+    <span class="tag tag-moderate">6 moderate</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="liao.html">Liao 2020 BALF COVID-19 &mdash; Liao et al., Nature Medicine (2020)</a></h2>
   <div class="meta-row">
     <span>Domain: Single-cell scRNA-seq of bronchoalveolar lavage in COVID-19</span>

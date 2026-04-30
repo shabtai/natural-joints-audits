@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoBCC &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>NeoBCC &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-04-30 &nbsp;|&nbsp;
+  Dataset: 12 post-treatment basal-cell-carcinoma scRNA-seq samples (GSE268728) &nbsp;|&nbsp;
+  Domain: Neoadjuvant T-VEC (oncolytic HSV-1) in basal cell carcinoma &nbsp;|&nbsp;
+  Code: <a href="https://github.com/cancerbits/ressler2024_neobcc" target="_blank" rel="noopener">cancerbits/ressler2024_neobcc</a> &nbsp;|&nbsp;
+  Data: <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE268728" target="_blank" rel="noopener">GEO GSE268728</a> &nbsp;|&nbsp;
+  Paper: <a href="https://www.nature.com/articles/s43018-024-00879-x" target="_blank" rel="noopener">Ressler et al., Nature Cancer (2025)</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Multi-agent audit covering code, data honesty, and data facts, followed by independent verification, public-record novelty checking, and impact quantification. The full audit produced a larger set of findings; this report covers only those whose impact on the paper&rsquo;s reported results is rated <strong>MAJOR</strong> or <strong>MODERATE</strong>.<br><br>
+  <strong>Headline:</strong> The headline n=2 herpes-reactive T-cell claim and the n=4-vs-4 Wilcoxon comparisons in Figure&nbsp;4 and Extended Data Figures&nbsp;9&ndash;10 sit on top of (a) a hardcoded clinical-response group assignment that disagrees with the metadata file shipped in the same repository for 4 of 12 patients, (b) a cell-barcode renaming regex that silently drops 9.6% of cells from the clonotype joins, (c) Wilcoxon tests run at the mathematical floor of the test, and (d) silent NA propagation that drops a patient from a critical n=4 comparison. Several of these compound on the same panels.
+</div>
+
+<div class="caveat-box">
+  <strong>Reproducibility caveat.</strong> The R pipeline cannot be rerun end-to-end from public materials &mdash; the manual cluster-annotation file (<code>Ressler2024_metadata.csv</code>) referenced by <code>INIT_Ressler2024.Rmd:492</code> is not in the GitHub repository or on GEO, and the recommended preprocessed Seurat object (<code>20241005_Ressler2024_NeoBCC.Rds</code>) is not on GEO either. Impact ratings below are therefore established by <em>structural proof</em> &mdash; citing specific code lines, the deposited data values they run against, and the deterministic consequence &mdash; rather than by re-execution. Where the paper&rsquo;s rendered notebooks (<code>notebook/*.md</code>) preserve intermediate output, that output is used as ground truth.
+</div>
+
+<h2>Major findings</h2>
+
+<!-- F-MAJOR-1 -->
+<div class="finding major">
+  <div class="finding-title">Finding 1 &mdash; Hardcoded clinical-response groups disagree with the repo&rsquo;s own metadata file for 4 of 12 patients</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Hardcoded label vector contradicts authoritative metadata</span>
+    <span class="meta-label">Location</span><span><code>notebook_template/ExtendedData_Figure9.Rmd</code>:68&ndash;72; identical block in <code>ExtendedData_Figure10.Rmd</code>:71&ndash;75; truth file <code>metadata/ADDITIONAL_METADATA.txt</code></span>
+  </div>
+  <p>Both notebooks construct the WHO clinical-response label by hardcoded patient list:</p>
+  <pre>meta$WHO &lt;- "SD"                                                                   # default
+meta$WHO[meta$patient %in% c("NeoBCC007_post","NeoBCC008_post","NeoBCC012_post","NeoBCC017_post")] &lt;- "CR"
+meta$WHO[meta$patient %in% c("NeoBCC004_post","NeoBCC006_post","NeoBCC010_post","NeoBCC011_post")] &lt;- "PR"</pre>
+  <p>The truth file <code>metadata/ADDITIONAL_METADATA.txt</code>, two directories away in the same repository, disagrees on the PR vs SD assignment for four patients:</p>
+  <table>
+    <thead><tr><th>Patient</th><th>Metadata (truth)</th><th>Hardcode (used)</th><th>Match</th></tr></thead>
+    <tbody>
+      <tr><td>NeoBCC005</td><td>PR</td><td>SD</td><td>&#10007;</td></tr>
+      <tr><td>NeoBCC010</td><td>SD</td><td><strong>PR</strong></td><td>&#10007;</td></tr>
+      <tr><td>NeoBCC011</td><td>SD</td><td><strong>PR</strong></td><td>&#10007;</td></tr>
+      <tr><td>NeoBCC015</td><td>PR</td><td>SD</td><td>&#10007;</td></tr>
+    </tbody>
+  </table>
+  <p>The structural consequence is severe. Counting only patients used in the WHO-stratified analyses:</p>
+  <ul>
+    <li>The &ldquo;PR&rdquo; group as analyzed = {004, 006, 010, 011} &mdash; <strong>50% true PR + 50% true SD</strong></li>
+    <li>The &ldquo;SD&rdquo; group as analyzed = {005, 014, 015, 018} &mdash; <strong>50% true PR + 50% true SD</strong></li>
+    <li>Only the CR group {007, 008, 012, 017} is correctly assigned</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> Every plot in Extended Data Figure&nbsp;9 that uses <code>x = "WHO"</code> / <code>fill = "WHO"</code> (~10 panels from line 384 onward) compares two groups that are statistically identical mixtures of the same two true categories. By construction, any visible separation or printed Wilcoxon <em>p</em>-value on those PR-vs-SD comparisons is reading noise &mdash; not response biology. The CR group is correctly labeled, so CR-vs-anything contrasts are unaffected; the PR-vs-SD distinction in the WHO-stratified panels is structurally invalid. Headline pCR-vs-non-pCR contrasts elsewhere (which use <code>Pathological.Response</code> directly from metadata) are not on this code path.</p>
+</div>
+
+<h2>Moderate findings</h2>
+
+<!-- F-MOD-1 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 2 &mdash; Cell-barcode rename regex misses suffixes <code>_10</code>, <code>_11</code>, <code>_12</code>; ~9.6% of cells silently fail the clonotype join</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Regex anchor problem &mdash; greedy alternation truncates at one digit</span>
+    <span class="meta-label">Location</span><span><code>notebook_template/Figure4.Rmd</code>:1018; <code>Figure5.Rmd</code>:283; <code>ExtendedData_Figure10.Rmd</code>:178</span>
+  </div>
+  <p>Cell barcodes from Seurat&rsquo;s integration step carry a sample-index suffix of the form <code>_1</code>, <code>_2</code>, &hellip;, <code>_12</code>. The notebooks rename these back to plain barcodes before joining to the scRepertoire TCR/BCR table using a regex of the form <code>(_1|_2|...|_9)$</code> &mdash; covering only the single-digit suffixes. Cells originating from samples 10, 11, and 12 keep their two-digit suffix (<code>_10</code>, <code>_11</code>, <code>_12</code>) and therefore do not match any row in the clonotype table.</p>
+  <p>Counting in the deposited barcode files: <strong>10,801 cells</strong> across the three affected samples (NeoBCC10/11/12), or about <strong>9.6%</strong> of the cohort, are silently excluded from every TCR/BCR-aware analysis &mdash; including Figure&nbsp;4f and the clonality plots in Extended Data Figure&nbsp;10.</p>
+  <p><strong>Effect on paper claims.</strong> Sample-level TCR-clonality and BCR-clonality comparisons in Figures&nbsp;4&ndash;5 and EDF10 use a smaller cohort than the paper text implies. NeoBCC12 is one of the four CR patients in the metadata; its omission from the TCR-aware figures changes the n on the CR side of those panels. The omission is silent because the affected cells simply have NA in the joined columns rather than throwing.</p>
+</div>
+
+<!-- F-MOD-2 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 3 &mdash; Wilcoxon at the floor of the test; no FDR correction across ~50 comparisons</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Test ceiling / multiple-testing</span>
+    <span class="meta-label">Location</span><span><code>stat_compare_means(method = "wilcox.test", ...)</code> across Figures&nbsp;3, 4, 5 and EDF6&ndash;10</span>
+  </div>
+  <p>The two-sided Wilcoxon rank-sum test has a hard lower bound on the achievable <em>p</em>-value as a function of the two group sizes. For the cohort splits used in the paper:</p>
+  <ul>
+    <li>n = 4 vs n = 4 (PR vs SD, PR vs CR, SD vs CR &mdash; the only achievable splits in this 12-patient cohort): minimum two-sided <em>p</em> = <strong>0.0286</strong></li>
+    <li>n = 4 vs n = 8 (CR vs non-CR): minimum two-sided <em>p</em> = <strong>0.0040</strong></li>
+  </ul>
+  <p>Figure&nbsp;4d&rsquo;s &ldquo;CR vs SD <em>P</em> = 0.029&rdquo; is exactly the floor: the test is reporting the smallest <em>p</em>-value the data shape can produce. The same holds for any other n=4 vs n=4 panel that prints <em>P</em> = 0.029. Across the manuscript and supplements, ~50 such Wilcoxon comparisons are computed; no false-discovery-rate correction is applied.</p>
+  <p><strong>Effect on paper claims.</strong> A printed <em>p</em>-value at the test floor is not evidence of a real effect &mdash; it only requires that the two groups be perfectly rank-separable, which is structurally easier in a 4-vs-4 split than the <em>p</em>-value suggests. Combined with the absence of multiple-testing correction across ~50 such tests, the cumulative claim of repeated significance in this paper is overstated. Compounds with Findings&nbsp;1 and 4 on the same Figure&nbsp;4d panel.</p>
+</div>
+
+<!-- F-MOD-3 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 4 &mdash; Cyto/Treg ratio in Figure&nbsp;4d propagates NA silently; one missing patient drops the headline <em>P</em> = 0.029 below significance</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Silent NA propagation through a per-patient ratio</span>
+    <span class="meta-label">Location</span><span><code>notebook_template/Figure4.Rmd</code> (per-patient cytotoxic/Treg ratio used by Figure&nbsp;4d)</span>
+  </div>
+  <p>The cytotoxic-to-Treg ratio used in Figure&nbsp;4d is computed per patient as <code>Nb[anno_l2 == "CytoTcell"] / Nb[anno_l2 == "Tregs"]</code>. When a patient&rsquo;s subset has no Tregs detected, the denominator expression returns <code>numeric(0)</code>, the ratio becomes NA, and the patient silently drops from the downstream Wilcoxon.</p>
+  <p>NeoBCC10 contributes only 133 cells (Finding&nbsp;5) and is therefore the most likely patient to have zero detected Tregs on this panel. NeoBCC10 also lands in the &ldquo;PR&rdquo; group as analyzed (per the hardcode of Finding&nbsp;1). If NeoBCC10 drops out of the Cyto/Treg panel, the &ldquo;PR&rdquo; group falls from n=4 to n=3, and the n=3 vs n=4 Wilcoxon floor is <strong>0.057</strong> &mdash; above the 0.05 threshold the paper claims to clear.</p>
+  <p><strong>Effect on paper claims.</strong> The reported <em>P</em>&nbsp;=&nbsp;0.029 on Figure&nbsp;4d depends on every patient being present. Silent NA propagation makes the result fragile to a single-patient drop &mdash; and Finding&nbsp;1 already shows that the &ldquo;PR&rdquo; and &ldquo;SD&rdquo; groups in this comparison are not the response groups they are labeled as. The combination means the panel is over-determined by group definition and under-determined by sample size.</p>
+</div>
+
+<!-- F-MOD-4 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; NeoBCC10 contributes 133 cells (~70&times; below cohort median) and enters Wilcoxon panels with full patient weight</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Per-sample weighting &mdash; small-sample treated as full patient</span>
+    <span class="meta-label">Location</span><span>Per-patient summary statistics consumed by Figures&nbsp;3&ndash;5 and EDF6&ndash;10</span>
+  </div>
+  <p>Per-patient cell counts in the deposited cohort range from <strong>133</strong> (NeoBCC10) to <strong>18,752</strong>, with a cohort median around <strong>10,400</strong>. Every figure that aggregates to one value per patient (cell-fraction plots, clonality summaries, Cyto/Treg ratio) treats NeoBCC10&rsquo;s 133 cells as carrying the same weight as the median patient&rsquo;s ~10,000 cells. No QC threshold filters NeoBCC10 out, and no figure caption flags the disparity.</p>
+  <p>Per Finding&nbsp;1, NeoBCC10 is also the patient that the hardcoded label assigns to PR rather than its true SD. So in the WHO-stratified n=4 Wilcoxons, a 133-cell sample is being used as one of four data points in a contaminated &ldquo;PR&rdquo; group.</p>
+  <p><strong>Effect on paper claims.</strong> Any per-patient summary in Figures&nbsp;3&ndash;5 and EDF6&ndash;10 is more sensitive to NeoBCC10&rsquo;s small-sample noise than the equal-weight aggregation suggests. The effect is most acute in n=4 vs n=4 Wilcoxon tests, where one outlier patient is 25% of one group.</p>
+</div>
+
+<!-- F-MOD-5 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 6 &mdash; McPAS join is alpha-only, lacks a Species filter, and uses order-dependent dedup</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Reference-table join semantics</span>
+    <span class="meta-label">Location</span><span><code>notebook_template/Figure4.Rmd</code>:1115&ndash;1131</span>
+  </div>
+  <p>The McPAS-TCR annotation join used to label cells as pathogen-reactive in Figure&nbsp;4f does three things in combination:</p>
+  <ol>
+    <li><strong>Alpha-only matching.</strong> Cells are matched to McPAS rows on <code>CDR3.alpha.aa</code> alone. McPAS entries are typically alpha+beta TCR pairs; a cell that matches a McPAS alpha but has a different beta is annotated as the McPAS pathology anyway. (Direct check: of the two cells labeled <code>hHSV:</code> in the rendered Figure&nbsp;4f, one cell&rsquo;s beta differs from the McPAS entry&rsquo;s beta for the same alpha &mdash; the call is on partial-chain evidence only.)</li>
+    <li><strong>No Species filter.</strong> McPAS contains both Human and Mouse TCRs. A cell&rsquo;s human alpha that happens to coincide with a mouse-TCR alpha in McPAS will inherit the mouse pathology label. The two herpes cells in Figure&nbsp;4f happen to match Human McPAS rows; the protection is incidental, not coded.</li>
+    <li><strong>Order-dependent dedup.</strong> When a cell&rsquo;s alpha matches multiple McPAS rows with different pathologies, <code>!duplicated(joint$rid)</code> picks the first row in McPAS file order. This is deterministic but unprincipled &mdash; a different McPAS row order would produce different pathology assignments for the same cells.</li>
+  </ol>
+  <p><strong>Effect on paper claims.</strong> The headline n=2 herpes-reactive cells in Figure&nbsp;4f survive these issues for incidental reasons (both alphas resolve to a single Human McPAS row). For the broader pathogen-vs-cancer breakdown in EDF10, mouse rows can leak in for non-HSV pathologies, and ambiguous-alpha cells get a non-deterministic-from-the-paper&rsquo;s-perspective label. The strength of any &ldquo;X% of TCRs are pathogen-reactive&rdquo; statement on this code path is weaker than the alpha-only match implies.</p>
+</div>
+
+<!-- F-MOD-6 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 7 &mdash; Dead <code>stat_compare_means</code> comparison list in EDF10: factor levels are <code>c("pCR","non-pCR")</code> but the test references <code>CR/PR/SD</code></div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>ggpubr silent no-op &mdash; comparison labels not in the factor</span>
+    <span class="meta-label">Location</span><span><code>notebook_template/ExtendedData_Figure10.Rmd</code>:1015 and 1024</span>
+  </div>
+  <p>The clonality plots g1 and g2 in EDF10 are constructed with <code>x = "Response"</code> where <code>Response</code> is a factor with levels <code>c("pCR","non-pCR")</code>:</p>
+  <pre>q1$Response &lt;- factor(q1$Response, levels = c("pCR", "non-pCR"))
+g1 &lt;- ggpaired(q1, x = "Response", ...,
+               comparison = list(c("CR","SD"), c("SD","PR"), c("CR","PR")), ...)</pre>
+  <p>The <code>stat_compare_means</code> comparison list references <code>CR</code>, <code>SD</code>, and <code>PR</code> &mdash; none of which are levels of the factor being plotted. ggpubr silently emits no significance annotations in this configuration. The fact that the panels render without bracket annotations is the only visible symptom; the missing comparisons are not flagged in the figure caption.</p>
+  <p>Because <code>params$accessibility = "lock"</code> by default, the entire EDF10 chunk is normally skipped on a clean clone &mdash; the bug only fires when a user with EGA-approved BCR data sets <code>accessibility = "unlock"</code>, which masks it from any reader who does not have controlled-access data.</p>
+  <p><strong>Effect on paper claims.</strong> Where EDF10 is reproduced from the unlocked code path, the &ldquo;CR vs PR&rdquo;, &ldquo;CR vs SD&rdquo;, and &ldquo;SD vs PR&rdquo; significance brackets the code attempts to draw simply do not appear. Any conclusion in the manuscript that points to those bracketed comparisons relies on output the unlocked code does not actually produce.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Hardcoded WHO clinical-response groups disagree with metadata for 4/12 patients; PR/SD groups are 50/50 mixtures</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; PR-vs-SD comparisons in EDF9 (and EDF10 via the same hardcode) measure noise by construction</td></tr>
+<tr><td>2</td><td>Cell-barcode rename regex misses <code>_10/_11/_12</code>; 10,801 cells (~9.6%) fall out of clonotype joins</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; TCR/BCR-aware figures use a smaller cohort than implied; NeoBCC12 (CR) silently dropped</td></tr>
+<tr><td>3</td><td>Wilcoxon at the test floor (<em>p</em> = 0.0286 for 4 vs 4); no FDR correction across ~50 tests</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; printed <em>p</em>-values at floor; cumulative significance overstated</td></tr>
+<tr><td>4</td><td>Cyto/Treg ratio NA propagation: a single dropped patient takes Fig 4d <em>P</em> = 0.029 to <em>p</em>-floor 0.057</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; Fig 4d significance fragile to one missing patient</td></tr>
+<tr><td>5</td><td>NeoBCC10 contributes 133 cells (~70&times; below median) at full patient weight in n=4 Wilcoxons</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; per-patient summaries dominated by small-sample noise from one patient</td></tr>
+<tr><td>6</td><td>McPAS join: alpha-only, no Species filter, order-dependent dedup</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; pathogen-reactivity labels weaker than implied; mouse rows can leak into human cells</td></tr>
+<tr><td>7</td><td>EDF10 <code>stat_compare_means</code> comparison list references factor levels that don&rsquo;t exist; ggpubr silently emits nothing</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; CR/PR/SD significance annotations the code attempts never render</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">* Novelty unverified. The audit&rsquo;s public-record search (PubPeer, Nature Cancer letters/Matters Arising, GitHub issues on the <code>cancerbits/ressler2024_neobcc</code> repository, Retraction Watch, citing-study re-analyses) returned no prior public discussion of these specific findings. They should still be treated as &ldquo;potentially novel&rdquo; pending a more exhaustive manual literature search.</p>
+
+<h2>Reading guide</h2>
+<p>Findings&nbsp;1, 3, 4, and 5 compound on the same Figure&nbsp;4d / EDF9 panels. The PR-vs-SD comparisons there use groups that are 50/50 mixtures of the two true response categories (Finding&nbsp;1), at sample sizes where Wilcoxon&rsquo;s minimum two-sided <em>p</em>-value is the very value the paper reports as significant (Finding&nbsp;3), with a small-sample patient (Finding&nbsp;5) carrying full weight in one of those groups, and a silent NA propagation that can drop that patient from the test entirely and push the result above 0.05 (Finding&nbsp;4). The structural conclusion is that the WHO-stratified Wilcoxon panels do not sustain the response-group claims they label.</p>
+
+<p>The CR vs non-CR contrasts and the pCR-vs-non-pCR contrasts that read <code>Pathological.Response</code> directly from the metadata are <em>not</em> on the WHO code path and are not affected by Finding&nbsp;1. Findings&nbsp;2, 6, and 7 affect the TCR/BCR-aware figures and the Figure&nbsp;4f herpes-reactivity panel; the headline n=2 herpes-reactive cells survive Findings&nbsp;6 for incidental reasons (both alphas happen to resolve cleanly), but the broader pathogen-reactivity breakdown in EDF10 inherits the alpha-only and Species-filter weaknesses.</p>
+
+<p>Findings rated MINOR or NEGLIGIBLE by the impact quantifier, plus reproducibility-only findings, are not reproduced here per scope. They include: a non-Ensembl <code>HSV_genome</code> row in <code>gene_features.csv</code> (T-VEC oncolytic-virus reference, not load-bearing for the paper&rsquo;s claims); marker panels that mix HGNC symbols and protein aliases (CD25 / IL2RA, TIM3 / HAVCR2) which silently drop from dot plots; the absence of the manual cluster-annotation file <code>Ressler2024_metadata.csv</code> from the repository (a reproducibility issue that does not affect the published numbers); and the abstract&rsquo;s pre/post <em>p</em>-values being computed on a separate mIF cohort (n=16) rather than on the public scRNA pipeline (a transparency issue affecting reproducibility from public materials only).</p>
+
+</body>
+</html>
