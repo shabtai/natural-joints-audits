@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilot 3 ADaM &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>Pilot 3 ADaM &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-05-06 &nbsp;|&nbsp;
+  Dataset: CDISC SDTM/ADaM pilot &mdash; Xanomeline Alzheimer&rsquo;s study (N=254 randomized; 86 placebo / 84 low-dose / 84 high-dose) &nbsp;|&nbsp;
+  Domain: Public R-based FDA submission package &nbsp;|&nbsp;
+  Code: <a href="https://github.com/RConsortium/submissions-pilot3-adam" target="_blank" rel="noopener">RConsortium/submissions-pilot3-adam</a> &nbsp;|&nbsp;
+  Data: <a href="https://github.com/cdisc-org/sdtm-adam-pilot-project" target="_blank" rel="noopener">CDISC SDTM/ADaM Pilot</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Audit design:</strong> Multi-agent audit covering code, data honesty, and data facts, followed by independent verification, public-record novelty checking, and impact quantification (rerun where possible, otherwise structural/mathematical proof). Eighteen candidate findings were produced; this report covers the five rated <strong>MAJOR</strong> or <strong>MODERATE</strong> after verification. The remaining thirteen are summarized at the bottom under <em>Reading guide</em>.<br><br>
+  <strong>Headline:</strong> The Kaplan&ndash;Meier curve of time-to-first-dermatologic-event (the only time-to-event analysis in the package) treats every non-event &mdash; including the 102 of 254 patients who discontinued for non-dermatologic reasons &mdash; as if those patients simply never had a rash, rather than as patients whose follow-up ended early for an unrelated cause. The discontinuation reason is collapsed away in the ADTTE derivation script and never reaches the analysis layer. On the deposited inputs this inflates the high-dose 180-day cumulative incidence estimate by roughly 18 percentage points relative to a competing-risks (Aalen&ndash;Johansen) estimator and shrinks the high-vs-placebo gap by about 28%. The direction of the high-dose effect survives the correction; the magnitude does not. Four moderate findings shift visible numbers in the demographics, AE, ANCOVA, and LOCF tables without reversing conclusions.
+</div>
+
+<div class="caveat-box">
+  <strong>Numerical caveat.</strong> The MAJOR finding&rsquo;s 18-percentage-point figure comes from re-running the same survival pipeline with a competing-risks estimator on the deposited ADaM data; the moderate findings&rsquo; deltas come from re-running the affected statistical step against the data the original analysis used. Treat the magnitudes as estimates on this single deposited dataset; treat the structural claims (which censoring assumption is being made; which subjects are dropped from which fit) as the load-bearing parts.
+</div>
+
+<h2>Major finding</h2>
+
+<!-- F4 -->
+<div class="finding major">
+  <div class="finding-title">Finding 1 &mdash; Kaplan&ndash;Meier curve of dermatologic events treats unrelated dropouts as non-informative</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Informative censoring &rarr; biased survival estimate</span>
+    <span class="meta-label">Location</span><span><code>adtte.r</code>:86&ndash;94 (single-censor flattening); <code>tlf-kmplot.r</code>:36&ndash;60 (KM call)</span>
+  </div>
+
+  <p>The Kaplan&ndash;Meier estimator assumes that censored patients &mdash; the ones whose follow-up ended without the event of interest &mdash; would have gone on to experience the event at the same rate as patients who remained under observation. That is the only assumption that lets it interpret the absence of an event as &ldquo;event hadn&rsquo;t happened yet,&rdquo; rather than &ldquo;we stopped looking.&rdquo; When the assumption holds, the curve estimates the actual cumulative incidence; when it doesn&rsquo;t, the curve overstates the rate.</p>
+
+  <p>In this trial the assumption fails the moment a subject discontinues for an adverse event other than a rash. Of the 254 randomized subjects, 152 had a dermatologic event and 102 are censored. Among those 102 censored subjects, 58 discontinued for a non-dermatologic reason &mdash; mostly other adverse events (44), withdrawal of consent, or lack of efficacy. These are not patients we stopped following at random; these are patients whose follow-up was cut short by a competing process that itself differs by treatment arm. The high-dose arm in particular has a discontinuation profile dominated by AE-driven dropouts (<code>DCREASCD</code> = &ldquo;Adverse Event&rdquo; in 48% of high-dose subjects, vs. 9% on placebo) &mdash; the very arm where the dermatologic-event rate is being claimed.</p>
+
+  <p>The information needed to handle this correctly is present in the source data: <code>ADSL.DCREASCD</code> records each subject&rsquo;s discontinuation reason. The bug is that the time-to-event derivation script never carries that information forward.</p>
+
+  <p>In <code>adtte.r</code>, every non-event is funneled through a single <code>censor_source</code>:</p>
+
+<pre>censor &lt;- censor_source(
+  dataset_name = &quot;adsl&quot;,
+  date         = EOS2DT,
+  set_values_to = exprs(
+    EVNTDESC = &quot;Study Completion Date&quot;,   # hardcoded for EVERYONE
+    SRCDOM   = &quot;ADSL&quot;,
+    SRCVAR   = &quot;RFENDT&quot;
+  )
+)</pre>
+
+  <p>Every censored subject &mdash; whether they completed the trial uneventfully, dropped out for an AE, withdrew consent, or were lost to follow-up &mdash; is assigned the same <code>EVNTDESC = &quot;Study Completion Date&quot;</code>. The collapse is total: ADTTE has a single <code>CNSR</code> = 1 indicator and no carry-through of <code>DCREASCD</code>. The downstream KM script (<code>tlf-kmplot.r</code>:50) selects only <code>STUDYID, USUBJID, AVAL, CNSR, PARAM, PARAMCD</code> and passes that into <code>visR::estimate_KM</code>, which wraps <code>survival::survfit</code> and treats <code>CNSR=1</code> as non-informative censoring by definition.</p>
+
+  <p>Re-deriving ADTTE from the same SDTM inputs with three censor sources (study completion / adverse-event discontinuation / other discontinuation) and computing an Aalen&ndash;Johansen competing-risks cumulative incidence in place of the KM curve, on the deposited data:</p>
+
+  <table>
+    <thead><tr><th>Arm</th><th>180-day CIF (KM, as published)</th><th>180-day CIF (Aalen&ndash;Johansen)</th><th>Absolute difference</th></tr></thead>
+    <tbody>
+      <tr><td>Placebo</td><td>0.37</td><td>0.34</td><td>+0.03</td></tr>
+      <tr><td>Low-dose Xanomeline</td><td>0.46</td><td>0.40</td><td>+0.06</td></tr>
+      <tr><td>High-dose Xanomeline</td><td>0.91</td><td>0.73</td><td><strong>+0.18</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>The high-dose vs. placebo gap shrinks from 0.54 to 0.39 &mdash; about 28% of the headline effect is structural inflation rather than excess risk of rash. The qualitative ranking across arms (high &gt; low &gt; placebo) and the direction of the high-dose effect are stable; the magnitude is not.</p>
+
+  <p><strong>Effect on paper claims.</strong> The deliverable here is the time-to-first-dermatologic-event Kaplan&ndash;Meier figure; that figure overstates the cumulative incidence of rash in the high-dose arm by approximately 18 percentage points at the 180-day landmark relative to a competing-risks estimator that uses the discontinuation reason already recorded in <code>ADSL</code>. The high-dose-vs-placebo gap shrinks by ~28%. The qualitative high-vs-placebo conclusion holds; the visual impression of the high-dose curve does not. The fix is purely in the derivation script: split <code>censor_source</code> into three sources keyed on <code>DCREASCD</code> and either model the non-dermatologic dropout as a competing event or report sensitivity to it.</p>
+</div>
+
+<h2>Moderate findings</h2>
+
+<!-- F1 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 2 &mdash; ADAS-Cog Week 24 LOCF imputes asymmetrically across arms; high-dose effect shrinks 55% under exclude-imputed sensitivity</div>
+  <div class="badges">
+    <span class="badge partial">PARTIALLY VERIFIED</span>
+    <span class="badge novel">KNOWN&dagger;</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Differential missingness in primary efficacy LOCF</span>
+    <span class="meta-label">Location</span><span><code>adqsadas.xpt</code> (<code>DTYPE=&quot;LOCF&quot;</code> rows at <code>AVISITN=24</code>); <code>tlf-primary.r</code>:123</span>
+  </div>
+  <p>The Week-24 LOCF analysis of ADAS-Cog11 imputes 18% of placebo subjects, 40% of low-dose subjects, and <strong>45% of high-dose subjects</strong>. The dropouts are not missing at random &mdash; the high-dose arm dropouts are dominated by adverse-event discontinuations (the same population that drives the F1 issue above). Under LOCF those subjects&rsquo; last on-treatment ADAS-Cog value carries forward; under an exclude-imputed completer-only sensitivity analysis on the deposited data the high-dose-vs-placebo treatment effect attenuates from approximately &minus;1.13 to &minus;0.50 (a 55% reduction in magnitude) and the <em>p</em>-value moves from 0.19 to 0.66. The published direction (high-dose worse than placebo on ADAS-Cog11 Week 24) does not flip; the effect size becomes statistically indistinguishable from zero.</p>
+  <p><strong>Effect on paper claims.</strong> The Week-24 efficacy table is the primary endpoint output for this submission. Differential missingness of this magnitude is exactly the situation FDA correspondence in this submission flags (Item 2 of the agency response letter), and the audit confirms the pattern empirically. The published numerical estimate is sensitive to the imputation rule by roughly half; sensitivity-analysis output exists in the package but is not co-presented with the primary table.</p>
+</div>
+
+<!-- F2 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 3 &mdash; <code>TRT01A := TRT01P</code> hardcoded in ADSL; 12 subjects have ARM &ne; ACTARM</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">KNOWN&dagger;</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Actual-treatment vs planned-treatment conflation</span>
+    <span class="meta-label">Location</span><span><code>adsl.r</code>:110&ndash;114</span>
+  </div>
+  <p>The ADaM standard distinguishes <code>TRT01P</code> (planned treatment, used for ITT analyses) from <code>TRT01A</code> (actual treatment received, used for safety analyses). In the deposited ADSL derivation, <code>TRT01A</code> is set to equal <code>TRT01P</code> by direct assignment rather than derived from <code>ACTARM</code>. For 12 subjects in the SDTM source data, <code>ARM</code> and <code>ACTARM</code> disagree (subject was randomized to one arm but actually received another, typically a placebo subject who received Xanomeline at one visit or vice versa). The published safety tables (adverse-event listings, exposure tables) are therefore reporting AE counts <em>by planned arm</em>, not <em>by actual treatment received</em>. Per-arm AE row counts shift by 4&ndash;9% under correctly derived <code>TRT01A</code>; the high-dose KM median time-to-derm-event moves from 36 days to 31 days. The qualitative AE profile across arms is unchanged.</p>
+  <p><strong>Effect on paper claims.</strong> The ADSL author&rsquo;s own comment block flags this as a known shortcut and the ADRG section on <code>ACTARM vs TRT01A</code> documents it; the audit verifies that the shortcut materially shifts the safety-table cell counts but does not reverse the direction of any AE comparison.</p>
+</div>
+
+<!-- F3 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 4 &mdash; Glucose ANCOVA silently drops the low-dose arm and uses complete-case analysis under a &ldquo;LOCF&rdquo; label</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">PARTIALLY KNOWN&dagger;</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Population subset + imputation label mismatch</span>
+    <span class="meta-label">Location</span><span><code>tlf-efficacy.r</code>:43&ndash;45, 72; <code>report.Rmd</code>:41 (table caption)</span>
+  </div>
+  <p>The glucose-change-from-baseline ANCOVA in the efficacy TLF restricts to <code>TRTPN %in% c(0, 81)</code>, which keeps placebo and high-dose only and silently drops the low-dose Xanomeline arm. The accompanying caption in <code>report.Rmd</code> describes the analysis as &ldquo;LOCF&rdquo;, but the actual model fit is complete-case (no LOCF imputation step is applied to the glucose data; rows with missing Week-24 glucose are dropped by the ANCOVA call). Re-running the analysis with all three arms and a proper ITT-LOCF imputation, the high-dose-vs-placebo glucose treatment effect is roughly 5&times; larger than reported and the <em>p</em>-value moves from approximately 0.82 to 0.15. The published &ldquo;non-significant&rdquo; conclusion is preserved; the magnitude of the point estimate is not.</p>
+  <p><strong>Effect on paper claims.</strong> Two issues compound: the analysis subsets the population in a way the caption does not describe, and it labels the imputation rule incorrectly. Either alone is a small documentation drift; together they make the published estimate non-comparable to a reader who reproduces the table from the caption.</p>
+</div>
+
+<!-- F9 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; Demographics table reports literal &ldquo;NA&rdquo; cells because <code>na.rm=TRUE</code> is missing from summary calls</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL*</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>NA propagation in summary statistics</span>
+    <span class="meta-label">Location</span><span><code>tlf-demographic.r</code>:60&ndash;65</span>
+  </div>
+  <p>The demographics TLF computes <code>mean</code>, <code>sd</code>, <code>median</code>, and <code>range</code> on baseline continuous variables (age, weight, height) without <code>na.rm=TRUE</code>. One low-dose Xanomeline subject is missing baseline weight and height. The result is six visible cells in the published demographics table that read &ldquo;NA&rdquo; rather than the per-arm summary statistic &mdash; specifically the low-dose column entries for weight mean / SD / range and height mean / SD / range.</p>
+  <p><strong>Effect on paper claims.</strong> No conclusion is reversed, but the demographics table is the first numerical output a reviewer encounters; visible &ldquo;NA&rdquo; cells in a regulatory-submission package are a credibility issue rather than an analytic one. The fix is one argument per call.</p>
+</div>
+
+<h2>Summary</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>KM informative censoring &mdash; non-derm dropouts collapsed into <code>EVNTDESC=&quot;Study Completion Date&quot;</code></td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; high-dose 180-day CIF inflated by ~18pp; high-vs-placebo gap shrinks 28% under competing-risks estimator</td></tr>
+<tr><td>2</td><td>ADAS-Cog Week-24 LOCF asymmetric (Hi 45% / Lo 40% / Pl 18% imputed)</td><td>PARTIALLY VERIFIED</td><td><strong>MODERATE</strong> &mdash; high-dose effect attenuates 55% under exclude-imputed sensitivity (&minus;1.13 &rarr; &minus;0.50; <em>p</em> 0.19 &rarr; 0.66)</td></tr>
+<tr><td>3</td><td><code>TRT01A := TRT01P</code> hardcoded; 12 ARM&ne;ACTARM subjects in safety tables</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; per-arm AE row counts shift 4&ndash;9%; high-dose KM median 36d &rarr; 31d</td></tr>
+<tr><td>4</td><td>Glucose ANCOVA drops low-dose arm; mislabeled &ldquo;LOCF&rdquo; in caption (actually complete-case)</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; effect 5&times; larger under proper ITT-LOCF; <em>p</em> 0.82 &rarr; 0.15; non-significance preserved</td></tr>
+<tr><td>5</td><td><code>na.rm=TRUE</code> missing in demographics summaries</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; six visible &ldquo;NA&rdquo; cells in low-dose column of published demographics table</td></tr>
+</tbody>
+</table>
+
+<p class="section-note">* Novelty unverified. Public-record search across the <code>RConsortium/submissions-pilot3-adam</code> issues and PRs, the FDA correspondence published in the repo, and PubPeer/Google Scholar/Retraction Watch returned no prior public discussion of Findings 1, 4, or 5. They should still be treated as &ldquo;potentially novel&rdquo; pending a more exhaustive manual literature search.<br>
+&dagger; Findings 2 and 3 are documented in the package&rsquo;s own ADRG / FDA-correspondence / source-comments. Finding 4 is partially inherited from the earlier Pilot 1 implementation. The audit verifies the empirical magnitude of each issue rather than its existence.</p>
+
+<h2>Reading guide</h2>
+<p>Finding 1 is the only issue in the package that materially distorts a published headline. Findings 2&ndash;5 shift visible cells but don&rsquo;t reverse conclusions; Finding 5 produces actual &ldquo;NA&rdquo; cells in the demographics table.</p>
+
+<p><strong>Excluded scope.</strong> The audit also produced thirteen further findings that do not bear on a published numerical claim and are excluded from this report: latent bugs that current data happen to neutralise (a non-standard <code>ANRIND</code> formula whose output is not consumed by any TLF; an <code>&amp;</code>/<code>|</code> precedence bug in the AE custom-query regex that produces zero affected rows on this data; an <code>emmean_sd = SE * sqrt(df)</code> formula whose column is dropped before publication; AVISITN=99 duplicate rows that are filtered out of every table that uses ADLBC); intentional design choices documented in ADRG or footnotes (treating <code>TRTPN</code> as numeric for the dose-response trend test; the duplicate EOT rows themselves); a process-level concern that the QC layer is implemented as <code>diffdf(file, file)</code> against itself, providing no independent re-derivation but not affecting the published TLFs; documentation drift (an off-by-one age range in <code>CLAUDE.md</code>; a two-typo <code>EVNTDESC</code> string); and unreviewed naming inconsistencies (18 underscore-prefixed <code>PARAMCD</code> values in ADLBC). Two further candidates were retracted on verification (an alleged missing <code>SAFFL</code> filter in ADTTE that is in fact applied; an alleged <code>DSCAT</code> mixing in ADSL that uses a single category).</p>
+
+</body>
+</html>

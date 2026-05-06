@@ -40,6 +40,19 @@
 </p>
 
 <div class="audit">
+  <h2><a href="pilot3.html">Pilot 3 ADaM &mdash; RConsortium R Submissions WG (CDISC Xanomeline pilot)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Public R-based FDA submission package &mdash; ADaM derivations + TLFs on CDISC SDTM/ADaM Xanomeline Alzheimer&rsquo;s pilot (N=254)</span>
+    <span>Generated: 2026-05-06</span>
+  </div>
+  <p class="summary">Sixteen R programs derive ADaM datasets from SDTM and produce the trial&rsquo;s tables, listings, and figures (TLFs). Audit finds one structural defect in the time-to-event derivation: every non-event subject &mdash; including 102 of 254 patients who discontinued for non-dermatologic reasons &mdash; is collapsed into a single <code>&quot;Study Completion Date&quot;</code> censoring source, so the Kaplan&ndash;Meier curve treats AE-driven dropouts as if they would have stayed event-free. On the deposited data this inflates the high-dose 180-day cumulative incidence by ~18 percentage points relative to a competing-risks estimator and shrinks the high-vs-placebo gap by ~28%. Four moderate findings shift visible numbers in the demographics, AE, ANCOVA, and primary-endpoint LOCF tables without reversing conclusions.</p>
+  <div class="tags">
+    <span class="tag tag-major">1 major</span>
+    <span class="tag tag-moderate">4 moderate</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="schadendorf.html">Schadendorf 2019 PD1 melanoma &mdash; Liu et al., Nature Medicine (2019)</a></h2>
   <div class="meta-row">
     <span>Domain: Anti-PD1 response prediction in metastatic melanoma (WES + RNA-seq + clinical, n=144)</span>
