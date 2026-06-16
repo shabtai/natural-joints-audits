@@ -53,7 +53,7 @@
 </div>
 
 <div class="summary-box">
-  <strong>Headline: no published claim of this paper is affected.</strong> A full audit of the deposited proteomic matrix, clinical tables, multiplexed-imaging tables, and the released image-analysis code found <strong>zero claim-invalidating defects</strong>. Every issue surfaced is a <em>bounded caveat</em> &mdash; a limitation that, when tested against the specific claim it could undermine, leaves the paper&rsquo;s conclusions standing. We report them here in the interest of transparency and to flag the data&rsquo;s soft spots for anyone re-analysing the public deposit.<br><br>
+  <strong>Headline: no published claim of this paper is affected.</strong> A localized, enrichment-guided audit of the deposited proteomic matrix, clinical tables, multiplexed-imaging tables, and the released image-analysis code found <strong>no claim-invalidating defects</strong> in the areas the enrichment flagged as at-risk. (Scope is deliberate &mdash; see Methodology; the paper&rsquo;s downstream statistical code was not deposited, so checks target the deposited inputs and the claims the enrichment localized, not every figure.) Every issue surfaced is a <em>bounded caveat</em> &mdash; a limitation that, when tested against the specific claim it could undermine, leaves the paper&rsquo;s conclusions standing. We report them here in the interest of transparency and to flag the data&rsquo;s soft spots for anyone re-analysing the public deposit.<br><br>
   The paper&rsquo;s core conclusions &mdash; grade- and subtype-associated proteomic differences, higher proteomic intra-tumor heterogeneity in high-grade tumors, and the imaging&ndash;proteomics integration &mdash; survive every targeted check. Two of the four claim-level caveats are <em>by design</em> (the authors already mitigate them); the other two are statistical-fragility notes, not errors.
 </div>
 
@@ -91,7 +91,7 @@
     <span class="meta-label">Test</span><span>Cram&eacute;r&rsquo;s V; linear mixed model with TMT set as a random effect; within-patient control</span>
   </div>
   <p>Receptor subtype and grade are strongly associated with the TMT multiplexing batch (Cram&eacute;r&rsquo;s V = 0.69 for subtype, 0.76 for grade); several TMT sets are 100% one subtype. Because subtype/grade is a patient-level property and patients were largely assigned to subtype-pure TMT runs, batch and biology cannot be perfectly separated by design, and the paper&rsquo;s patient random-effect does not model TMT batch explicitly.</p>
-  <p><strong>Effect on the claim.</strong> When the top differential proteins are re-tested with TMT set as an explicit random effect, <strong>13 of 15 remain significant</strong> (several at p &lt; 1e-6); only ERGIC1 and FAH lose significance. As a positive control, the <em>within-patient</em> cancer-vs-normal contrast retains <strong>~103%</strong> of its effect within batch &mdash; confirming the test preserves genuine biology and specifically isolates the batch-entangled between-patient contrasts. The differential signatures hold; the honest caveat is that a handful of between-patient proteins are batch-fragile and the design cannot fully disentangle the two.</p>
+  <p><strong>Effect on the claim.</strong> When the top differential proteins are re-tested with TMT set as an explicit random effect, the <strong>subtype (TNBC-vs-HR+) contrast retains 13 of 15</strong> (only ERGIC1 and FAH lose significance) and the <strong>grade (3-vs-2) contrast retains 15 of 15</strong> (all p &lt; 1e-3). As a positive control, the <em>within-patient</em> cancer-vs-normal contrast retains <strong>~103%</strong> of its effect within batch &mdash; confirming the test preserves genuine biology and specifically isolates the batch-entangled between-patient contrasts. The differential signatures hold; the honest caveat is that a handful of between-patient proteins are batch-fragile and the design cannot fully disentangle the two.</p>
 </div>
 
 <div class="finding caveat">
@@ -173,7 +173,7 @@
 <tr><th>#</th><th>Finding</th><th>Verified</th><th>Effect on paper claims</th></tr>
 </thead>
 <tbody>
-<tr><td>1</td><td>Subtype/grade differentials confounded with TMT batch</td><td>VERIFIED</td><td><strong>None</strong> &mdash; 13/15 survive a batch-aware mixed model; 2 proteins batch-fragile</td></tr>
+<tr><td>1</td><td>Subtype/grade differentials confounded with TMT batch</td><td>VERIFIED</td><td><strong>None</strong> &mdash; subtype 13/15 and grade 15/15 survive a batch-aware mixed model; 2 subtype proteins batch-fragile</td></tr>
 <tr><td>2</td><td>A few differential proteins (KRT8) rest on imputed values</td><td>VERIFIED</td><td><strong>None</strong> &mdash; signature sound; flag specific low-coverage proteins</td></tr>
 <tr><td>3</td><td>~4% of Grade differentials are composite multi-gene groups</td><td>VERIFIED</td><td><strong>None</strong> &mdash; ambiguous identity, transparently disclosed</td></tr>
 <tr><td>4</td><td>Proteomic-ITH&times;grade is borderline (p = 0.048)</td><td>VERIFIED</td><td><strong>None</strong> &mdash; unconfounded and real, statistically fragile</td></tr>
