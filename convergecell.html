@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConvergeCELL &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.caveat   { border-left-color: #16a085; }
+  .finding.reuse    { border-left-color: #2980b9; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .no-impact { background: #16a085; color: white; }
+  .reuse-only { background: #2980b9; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #e9f7ef; border: 1px solid #a9dfbf; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>ConvergeCELL &mdash; Shahar et al., Converge Bio (bioRxiv 2026)</h1>
+<div class="meta">
+  Generated: 2026-06-21 &nbsp;|&nbsp;
+  Domain: Patient-level transcriptomics foundation model + drug-target ranking (single-cell &amp; bulk) &nbsp;|&nbsp;
+  Paper: <a href="https://www.biorxiv.org/content/10.64898/2026.05.07.723555v1" target="_blank" rel="noopener">DOI 10.64898/2026.05.07.723555</a> &nbsp;|&nbsp;
+  Code: <a href="https://huggingface.co/ConvergeBio/virtual-cell-patient" target="_blank" rel="noopener">HF virtual-cell-patient</a> + <a href="https://huggingface.co/ConvergeBio/virtual-cell-distil-bulk" target="_blank" rel="noopener">virtual-cell-distil-bulk</a> &nbsp;|&nbsp;
+  Data: GEO <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185263" target="_blank" rel="noopener">GSE185263</a> (sepsis), <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE148073" target="_blank" rel="noopener">GSE148073</a> (T1D)
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Headline: no published claim of this paper is affected.</strong> An audit of the released model code, configs, and the public datasets the paper validates on (the GSE185263 sepsis cohort and the GSE148073 type-1-diabetes example) found <strong>no data-integrity error, no fabrication, and no result-changing defect</strong>. Every number we could recompute from the released artifacts reproduces <em>exactly</em> &mdash; the sepsis cohort construction, the figure cohort counts, the 18,301-gene vocabulary, the model architecture, and the reported parameter counts. The paper is also unusually candid about its own limits (it openly reports a sepsis AUROC of 0.56 and that a trivial PCA+XGBoost baseline ties it on classification).<br><br>
+  The only issues we surfaced are <strong>four minor defects in the released code</strong> &mdash; reuse hazards that would bite a third party adapting the published repositories to new data, but that have <strong>no effect on any result reported in the paper</strong>. We report them here for the authors and for anyone reusing the code.
+</div>
+
+<div class="caveat-box">
+  <strong>Scope.</strong> This audit covers the released code and the public datasets in the paper&rsquo;s validation set. The headline drug-target rankings (lupus / multiple myeloma) depend on processed atlases and a ranking/curation pipeline that are not yet public (&ldquo;available upon publication&rdquo;), which is normal for a preprint; those numbers were therefore not independently re-derived and are out of scope here, not in dispute.
+</div>
+
+<h2>What holds up</h2>
+<p class="section-note">Checks run directly against the released artifacts. Every one reproduces exactly.</p>
+<table>
+<thead>
+<tr><th>Checked</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td>Sepsis cohort (GSE185263): 392 samples, 348 sepsis / 44 healthy; 5 collection sites</td><td>Reproduces exactly</td></tr>
+<tr><td>Sepsis classification bins: High SOFA &ge;5 = 82, Low SOFA &lt;2 = 138, healthy = 44 &rarr; 264 classifiable</td><td>Reproduces exactly (matches Methods)</td></tr>
+<tr><td>Figure 2 cohort/confusion totals (SLE 99/146/16 = 261; MM 16/18/50 = 84)</td><td>Match</td></tr>
+<tr><td>Gene vocabulary: exactly 18,301 HGNC symbols, unique, alphabetically sorted, identical across both repos</td><td>Match</td></tr>
+<tr><td>Model architecture &amp; config (n_genes 18,301; embed 512; hidden [4096,1024]; 10 classes) and parameter counts (79,963,661 / 9,897,986 trainable)</td><td>Match the checkpoints exactly</td></tr>
+<tr><td>Raw count matrix: pure integer counts, no NaN / no negatives; columns map 1:1 to the metadata samples</td><td>Clean</td></tr>
+<tr><td>Hugging Face example datasets vs their documented schema</td><td>Match</td></tr>
+</tbody>
+</table>
+<p>No factually wrong values, no broken cross-table identifiers, no leakage in the released example splits, and the model weights load with zero missing/unexpected keys. The released data deposit is authentic and internally consistent.</p>
+
+<h2>Released-code notes (do not affect the paper&rsquo;s results)</h2>
+<p class="section-note">Four real, verified defects in the published code. Each is a hazard only for someone reusing the repositories on their own data; none changes a number reported in the paper. We confirmed this for each.</p>
+
+<div class="finding reuse">
+  <div class="finding-title">Note 1 &mdash; Evaluation drops the patient grouping, so checkpoint selection uses the wrong loss aggregation</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge reuse-only">NO PAPER IMPACT</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Where</span><span><code>virtual-cell-patient/train.py</code> (<code>prediction_step</code>; <code>metric_for_best_model="eval_loss"</code>)</span>
+    <span class="meta-label">Paper impact</span><span>None under the documented augmentation</span>
+  </div>
+  <p>Training averages the loss <em>per patient</em> (to stop patients with more augmented views from dominating), but the evaluation path pops <code>entity_id</code> before the forward pass, so the validation loss &mdash; which selects the best checkpoint and drives early stopping &mdash; falls back to a plain <em>per-view</em> average. Model selection is therefore biased toward patients with more views, the exact thing the per-patient averaging was meant to prevent.</p>
+  <p><strong>Why it doesn&rsquo;t affect the paper.</strong> When every patient has the same number of augmented views, the per-view and per-patient losses are <em>mathematically identical</em>, so the bug is inert. The released example uses a uniform 5 views per patient and the README documents 5&times; as the default &mdash; under that scheme checkpoint selection is unchanged. The bug only bites if view counts vary across patients. (Training gradients are correct either way; only checkpoint selection could shift.)</p>
+</div>
+
+<div class="finding reuse">
+  <div class="finding-title">Note 2 &mdash; Patient IDs are round-tripped through float32 and collide above 2<sup>24</sup></div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge reuse-only">NO PAPER IMPACT</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Where</span><span><code>virtual-cell-patient/train.py</code> (<code>entity_id</code> packed into the logits tensor, cast back with <code>.astype(int)</code>)</span>
+    <span class="meta-label">Paper impact</span><span>None (4,479 patients &laquo; the collision boundary)</span>
+  </div>
+  <p>To carry patient identity into the metric function, <code>entity_id</code> is appended to the logits as a float column and later cast back to int. float32 represents integers exactly only up to 2<sup>24</sup> = 16,777,216; above that, distinct patient IDs silently merge (reproduced: 16,777,216 and 16,777,217 collapse to the same value). Merged IDs would corrupt the per-patient metric aggregation.</p>
+  <p><strong>Why it doesn&rsquo;t affect the paper.</strong> The training corpus is 4,479 patients &mdash; far below the boundary &mdash; so no collision is possible in the paper&rsquo;s own run. The hazard is for a re-user who assigns large or hashed integer patient IDs.</p>
+</div>
+
+<div class="finding reuse">
+  <div class="finding-title">Note 3 &mdash; README quick-start feeds un-normalized random input to a normalization-sensitive model</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge reuse-only">NO PAPER IMPACT</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Where</span><span><code>virtual-cell-patient/README.md</code> quick-start (<code>torch.randn(1, 500, 18301)</code>)</span>
+    <span class="meta-label">Paper impact</span><span>None &mdash; not part of the paper&rsquo;s pipeline</span>
+  </div>
+  <p>The model expects non-negative, library-size-normalized, log1p-transformed expression. The quick-start example feeds Gaussian noise (which contains negatives) and, because it runs under <code>.eval()</code>, &ldquo;succeeds&rdquo; and returns a class &mdash; so a user could mistake the shape-only smoke test for a valid inference recipe and run the model on out-of-distribution input.</p>
+  <p><strong>Why it doesn&rsquo;t affect the paper.</strong> The snippet is documentation, not part of the paper&rsquo;s analysis; the paper&rsquo;s own inputs are correctly normalized (TPM / CP10k+log1p). The fix is to ship a normalized example or label the snippet as shape-only.</p>
+</div>
+
+<div class="finding reuse">
+  <div class="finding-title">Note 4 &mdash; BatchNorm requires batch &gt; 1, but the trailing batch isn&rsquo;t dropped</div>
+  <div class="badges">
+    <span class="badge partial">PARTIALLY VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge reuse-only">NO PAPER IMPACT</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Where</span><span><code>modeling_virtual_cell.py</code> (<code>assert x.shape[0] &gt; 1</code>); <code>train.py</code> (<code>dataloader_drop_last</code> unset)</span>
+    <span class="meta-label">Paper impact</span><span>None &mdash; a crash would have prevented training</span>
+  </div>
+  <p>The encoder asserts a batch size greater than 1 (BatchNorm needs &ge;2 samples), yet <code>dataloader_drop_last</code> is not set. A dataset whose size leaves a size-1 trailing batch can therefore crash mid-epoch &mdash; most relevant to the distilled bulk model, whose input has no cell dimension to pad the batch out.</p>
+  <p><strong>Why it doesn&rsquo;t affect the paper.</strong> A crash would have stopped training outright; the released checkpoints trained fine, so this did not occur for the authors&rsquo; batch sizes. It is a latent crash risk for a re-user. The fix is one line: <code>dataloader_drop_last=True</code>.</p>
+</div>
+
+<h2>Summary</h2>
+<table>
+<thead>
+<tr><th>#</th><th>Note</th><th>Verified</th><th>Effect on paper results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Eval drops patient grouping &rarr; checkpoint selection on per-view loss</td><td>VERIFIED</td><td><strong>None</strong> &mdash; inert under the documented uniform 5&times; augmentation</td></tr>
+<tr><td>2</td><td><code>entity_id</code> float32 collision above 2<sup>24</sup></td><td>VERIFIED</td><td><strong>None</strong> &mdash; 4,479 patients are far below the boundary</td></tr>
+<tr><td>3</td><td>README quick-start uses un-normalized random input</td><td>VERIFIED</td><td><strong>None</strong> &mdash; documentation, not the paper&rsquo;s pipeline</td></tr>
+<tr><td>4</td><td>BatchNorm batch&gt;1 assert + <code>drop_last</code> unset</td><td>PARTIALLY VERIFIED</td><td><strong>None</strong> &mdash; latent crash risk for re-users only</td></tr>
+</tbody>
+</table>
+
+<h2>Reading guide</h2>
+<p>This report is a <em>negative</em> result: a rigorous audit of a paper that holds up. The released data is authentic and integrity-clean, every checkable number reproduces exactly, and the authors are candid about the genuine limits of their results. The four items above are ordinary code-quality defects in the released repositories &mdash; useful to fix for reproducibility and reuse, but with no bearing on any conclusion the paper draws.</p>
+<p>Items considered and deliberately not elevated: the full training corpus, evaluation cohorts, and ranking/curation code are not yet public (&ldquo;available upon publication&rdquo;), which is the normal state of a preprint and not a defect; and a few abstract/figure wording choices are expanded transparently in the paper&rsquo;s own body and supplement. Neither category constitutes a claim-invalidating finding, so neither is treated as one here.</p>
+
+</body>
+</html>

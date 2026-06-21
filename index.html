@@ -40,6 +40,19 @@
 </p>
 
 <div class="audit">
+  <h2><a href="convergecell.html">ConvergeCELL &mdash; Shahar et al., Converge Bio (bioRxiv 2026)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Patient-level transcriptomics foundation model + drug-target ranking (single-cell &amp; bulk)</span>
+    <span>Generated: 2026-06-21</span>
+  </div>
+  <p class="summary">A patient-representation model + bulk distillation module released on Hugging Face, validated on public lupus, multiple-myeloma, and sepsis cohorts. Audit of the released code and the public datasets finds <strong>no claim-invalidating defect</strong> &mdash; no data-integrity error, no fabrication, and every number recomputable from the released artifacts (sepsis cohort construction, figure counts, the 18,301-gene vocabulary, model architecture and parameter counts) reproduces exactly. The only issues are four minor defects in the released code &mdash; an eval/training loss-aggregation mismatch (inert under the documented augmentation), a float32 patient-ID collision above 2<sup>24</sup> (the corpus is far below it), an un-normalized README quick-start, and a BatchNorm trailing-batch crash risk &mdash; all reuse hazards with no effect on the paper&rsquo;s reported results. Data and code authentic.</p>
+  <div class="tags">
+    <span class="tag tag-valid">no claims affected</span>
+    <span class="tag tag-low">4 code re-use bugs</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="mardamshina.html">Breast Cancer Spatial Proteomics &mdash; Mardamshina et al., Nature Communications (2025)</a></h2>
   <div class="meta-row">
     <span>Domain: Multi-region spatial MS-based proteomics + multiplexed imaging of breast tumor heterogeneity (280 regions, 33 patients)</span>
