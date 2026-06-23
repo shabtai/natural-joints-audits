@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GSE68086 — Data QA Findings · Natural-Joints</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --line:#2a323d;
+    --ink:#e6edf3; --mut:#9aa7b4; --acc:#4cc2ff;
+    --med:#f0a64a; --medbg:#2a2014; --low:#d2c24a; --lowbg:#242214;
+    --ok:#3fb950; --okbg:#13241a; --kill:#ff6b6b; --killbg:#2a1518;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 22px 80px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .brand{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:700}
+  h1{margin:.35em 0 .15em;font-size:30px;line-height:1.2}
+  .sub{color:var(--mut);font-size:15px}
+  .verdict{margin:18px 0 0;background:var(--okbg);border:1px solid #1f5132;border-left:4px solid var(--ok);
+    border-radius:10px;padding:13px 16px;font-size:14.5px}
+  .verdict b{color:var(--ok)}
+  .meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:20px}
+  .meta-grid div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .meta-grid .k{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+  .meta-grid .v{font-size:15px;font-weight:600;margin-top:3px}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 6px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-size:13.5px}
+  .stat b{font-size:16px}
+  .stat.med b{color:var(--med)} .stat.low b{color:var(--low)} .stat.ok b{color:var(--ok)} .stat.kill b{color:var(--kill)}
+  h2.sec{margin:38px 0 6px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);
+    border-top:1px solid var(--line);padding-top:24px}
+  .sec-desc{color:var(--mut);font-size:13.5px;margin:0 0 14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-left-width:4px;border-radius:10px;
+    padding:16px 18px;margin:13px 0}
+  .card.med{border-left-color:var(--med)} .card.low{border-left-color:var(--low)}
+  .card.ok{border-left-color:var(--ok)} .card.kill{border-left-color:var(--kill)}
+  .card h3{margin:0 0 6px;font-size:17px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .tag{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .tag.med{background:var(--medbg);color:var(--med)} .tag.low{background:var(--lowbg);color:var(--low)}
+  .tag.ok{background:var(--okbg);color:var(--ok)} .tag.kill{background:var(--killbg);color:var(--kill)}
+  .tag.src{background:#1b2735;color:var(--acc)}
+  .card p{margin:8px 0}
+  .ev{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin-top:10px;font-size:13.5px}
+  .ev .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .fix{color:var(--ok);font-size:13.5px;margin-top:9px} .fix b{color:var(--ok)}
+  .strike{text-decoration:line-through;color:var(--mut)}
+  footer{margin-top:50px;border-top:1px solid var(--line);padding-top:20px;color:var(--mut);font-size:13px}
+  .disc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--mut);font-size:13px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div style="font-size:13px;margin-bottom:16px"><a href="geo-data-quality-findings.html" style="color:var(--acc)">&larr; GEO Data-Quality Findings</a></div>
+
+<header class="top">
+  <div class="brand">Natural-Joints · Automated Data QA</div>
+  <h1>GSE68086 — Tumor-Educated Platelets</h1>
+  <div class="sub">Data-quality audit of the raw deposit behind <em>Best et al., “RNA-Seq of Tumor-Educated Platelets…”</em> (Cancer Cell, 2015) — the canonical blood-platelet liquid-biopsy benchmark, heavily reused yet not previously audited at the raw-data level.</div>
+
+  <div class="verdict"><b>Verdict: the dataset is largely clean.</b> Every candidate below was checked against the raw matrix. No high-impact data bug survived verification — the findings are minor data-hygiene items and expected-by-design properties. Two items that first surfaced as “high-impact” were <b>disproved on inspection</b> (see “Did not survive verification”).</div>
+
+  <div class="meta-grid">
+    <div><div class="k">GEO Series</div><div class="v">GSE68086</div></div>
+    <div><div class="k">Samples</div><div class="v">285 (230 cancer · 55 HC)</div></div>
+    <div><div class="k">Cancer types</div><div class="v">6 + healthy</div></div>
+    <div><div class="k">Count matrix</div><div class="v">57,736 genes × 285</div></div>
+    <div><div class="k">Platform</div><div class="v">Illumina HiSeq 2500</div></div>
+    <div><div class="k">Audited by</div><div class="v">semantic-enricher</div></div>
+  </div>
+
+  <div class="stats">
+    <span class="stat med"><b>2</b> data-hygiene</span>
+    <span class="stat low"><b>5</b> advisory / expected</span>
+    <span class="stat ok"><b>2</b> correctly not flagged</span>
+    <span class="stat kill"><b>2</b> disproved on verification</span>
+  </div>
+</header>
+
+<!-- ============ DATA-HYGIENE ============ -->
+<h2 class="sec">① Data-hygiene findings (real, low-impact)</h2>
+<p class="sec-desc">Concrete, verified defects — easy to fix, low downstream consequence.</p>
+
+<div class="card med">
+  <h3><code>cell_type</code> case split: <code>Thrombocytes</code> vs <code>thrombocytes</code>
+    <span class="tag med">Confirmed</span><span class="tag src">3 detectors + raw data</span></h3>
+  <p>One biological concept is stored under two spellings — <b>245× “Thrombocytes”</b> and <b>40× “thrombocytes”</b> — a case-sensitivity entry error that fragments the category and silently splits any <code>groupby</code>. Confirmed directly in the data (the 40 lowercase rows fall in one submission batch).</p>
+  <div class="ev"><div class="lbl">Evidence</div>witnesses <code>GSM1817093</code>, <code>GSM1817094</code> = “thrombocytes”. Caught independently by the trap heuristic (<code>case_whitespace_split</code>), the cross-table invariant, and wrong-values; verified against the raw column.</div>
+  <div class="fix"><b>Fix:</b> <code>df['cell_type'].str.capitalize()</code>.</div>
+</div>
+
+<div class="card med">
+  <h3>Possibly inconsistent sample header: <code>HD-3-1</code> vs <code>HD-31</code>
+    <span class="tag low">Ambiguous</span><span class="tag src">vocab check</span></h3>
+  <p>Both <code>HD-3-1</code> and <code>HD-31</code> appear as matrix column headers. If they denote the <em>same</em> healthy donor written two ways, that silently breaks any join on sample id; if they are two distinct donors, it’s benign. <b>Unresolved from the data alone</b> — flagged for the depositor to confirm, not asserted as a defect.</p>
+  <div class="ev"><div class="lbl">Evidence</div>both headers present in <code>TEP_COUNT_MATRIX</code>; <code>HD-3</code> absent, <code>HD-1</code> present — consistent with either reading.</div>
+</div>
+
+<!-- ============ ADVISORY ============ -->
+<h2 class="sec">② Advisory — real but expected / by-design</h2>
+<p class="sec-desc">Accurately-recorded properties that constrain analysis; not data errors.</p>
+
+<div class="card low">
+  <h3>Severe zero-inflation / limit-of-detection censoring <span class="tag low">Expected</span><span class="tag src">trap hunter</span></h3>
+  <p><b>85.2%</b> of values per sample are exactly 0, and <b>29,195 / 57,736 genes (50.5%)</b> are zero across <em>all</em> 285 samples — characteristic of low-input platelet RNA, where zeros mean “below detection.” Methods assuming continuous expression will be biased.</p>
+  <div class="fix"><b>Fix:</b> pre-filter all-zero genes; use zero-inflated / negative-binomial models.</div>
+</div>
+
+<div class="card low">
+  <h3>Per-sample mean counts differ ~3× <span class="tag low">Check normalization</span><span class="tag src">reviewer</span></h3>
+  <p>If the matrix is normalized, per-sample means should be comparable — yet <code>Control-10</code> mean 48.4 vs <code>Breast-100</code> 17.8, <code>HD-4</code> 16.9 (reviewer found 2 scale clusters). Worth confirming whether columns are raw vs normalized before cross-sample comparison.</p>
+</div>
+
+<div class="card low">
+  <h3>Batch imbalance &amp; batch⟂cancer-type entanglement <span class="tag low">Advisory</span><span class="tag src">wrong-values</span></h3>
+  <p>Samples are skewed across runs (Batch01 = 2 vs Batch03 > 100), and cancer types are not cleanly randomized across batches (Batch01 GBM-only; Batch05/06 Breast/Lung-skewed). Real and by-design, but the confound to control for before attributing the published classifier signal to biology.</p>
+</div>
+
+<div class="card low">
+  <h3>Rare mutational subclasses (n=1) <span class="tag low">Advisory</span><span class="tag src">wrong-values</span></h3>
+  <p>Subtypes such as <code>MET</code> and <code>KRAS, MET</code> appear once each — genuine biology, too sparse for per-subtype claims.</p>
+</div>
+
+<div class="card low">
+  <h3>One within-patient replicate <span class="tag low">Minor</span><span class="tag src">raw-data check</span></h3>
+  <p><b>Corrected from an earlier overstatement.</b> A first pass framed this as systemic pseudoreplication; the raw data shows exactly <b>one</b> replicate pair in 285 samples — <code>Lung-20</code> and <code>Lung-20-1</code>. Worth grouping by patient in any cross-validation split, but it is a single case, not a structural trap.</p>
+</div>
+
+<!-- ============ OK ============ -->
+<h2 class="sec">③ Correctly <em>not</em> flagged (precision)</h2>
+<p class="sec-desc">Patterns a naïve checker false-alarms on; the enricher reframed them as legitimate conventions.</p>
+
+<div class="card ok">
+  <h3>Sample names vs GEO accessions <span class="tag ok">Convention</span></h3>
+  <p>Count-matrix columns use investigator-assigned <code>source_name</code> values rather than GEO accessions — a standard GEO submission convention, not a mismatch.</p>
+</div>
+<div class="card ok">
+  <h3>EGFR↔Lung, KRAS↔Pancreas associations <span class="tag ok">Expected biology</span></h3>
+  <p>The correlation between <code>cancer_type</code> and <code>mutational_subclass</code> reflects real disease subtyping, not a derived/duplicated column.</p>
+</div>
+
+<!-- ============ DISPROVED ============ -->
+<h2 class="sec">④ Did not survive verification</h2>
+<p class="sec-desc">Candidates the automated pass surfaced that the raw data disproved — kept here for transparency.</p>
+
+<div class="card kill">
+  <h3><span class="strike">Value <code>999</code> = missing-data sentinel</span> → false positive
+    <span class="tag kill">Disproved</span></h3>
+  <p>An open-ended verifier asserted (at confidence 1.0) that a <code>999</code> in <code>Vumc-NSCLC-57</code> was a sentinel for filtered data. The raw matrix says otherwise: <b><code>999</code> appears 67 times across 16.45M cells</b> (once in that column) — the frequency of an ordinary count, not a systematic sentinel (counts range 0–289,755). <b>Not a defect.</b> The pipeline behavior that produced this has since been fixed (the wide path is now grounded in deterministic detectors, not open-ended LLM discovery).</p>
+</div>
+
+<div class="card kill">
+  <h3><span class="strike">Systemic pseudoreplication</span> → overstated
+    <span class="tag kill">Downgraded</span></h3>
+  <p>Initially framed as “rows are samples but keyed by patient → all 285 pseudoreplicated.” Verification found exactly one true replicate pair (see §2). Reframed to a minor note.</p>
+</div>
+
+<div class="disc">
+  <strong>Methodology.</strong> Findings produced by the <em>semantic-enricher</em> pipeline (profiler → resolution → reviewer → trap hunter → grounded wrong-values verifier) over the raw GEO deposit, then <b>each one verified against the deposited matrix</b>. Severity reflects downstream impact, not detector confidence. The two §4 items are recorded to show the verification discipline — confident automated claims are checked, not trusted.
+</div>
+
+<footer>
+  Natural-Joints — AI &amp; biological-data quality assurance ·
+  <a href="https://natural-joints.com">natural-joints.com</a> ·
+  <a href="mailto:ran@natural-joints.com">ran@natural-joints.com</a><br>
+  Source: <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE68086">GEO · GSE68086</a> ·
+  Best et al., Cancer Cell 2015. Generated by automated audit; figures reproducible from the deposited matrix.
+</footer>
+
+</div>
+
+<!-- Natural-Joints analytics -->
+<script data-goatcounter="https://natural-joints.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

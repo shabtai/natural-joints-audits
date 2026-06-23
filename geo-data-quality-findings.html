@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natural Joints &mdash; GEO Data-Quality Findings</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.9rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; margin-bottom: 0.4rem; }
+  .lede { color: #555; font-size: 0.95rem; margin-bottom: 2rem; }
+  .audit { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #2980b9; }
+  .audit h2 { font-size: 1.15rem; margin: 0 0 0.4rem 0; }
+  .audit h2 a { color: #1a1a1a; text-decoration: none; }
+  .audit h2 a:hover { text-decoration: underline; color: #2980b9; }
+  .meta-row { color: #666; font-size: 0.85rem; margin-bottom: 0.6rem; }
+  .meta-row span { margin-right: 1rem; }
+  .summary { font-size: 0.92rem; line-height: 1.45; }
+  .tags { margin-top: 0.6rem; }
+  .tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.35rem; }
+  .tag-critical { background: #8b0000; color: white; }
+  .tag-major    { background: #c0392b; color: white; }
+  .tag-high     { background: #c0392b; color: white; }
+  .tag-moderate { background: #e67e22; color: white; }
+  .tag-medium   { background: #e67e22; color: white; }
+  .tag-low      { background: #95a5a6; color: white; }
+  .tag-info     { background: #2980b9; color: white; }
+  .tag-valid    { background: #27ae60; color: white; }
+  .footer { margin-top: 3rem; font-size: 0.85rem; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>Natural Joints &mdash; GEO Data-Quality Findings</h1>
+<p class="lede">
+  Automated data-quality audits of widely-reused public <a href="https://www.ncbi.nlm.nih.gov/geo/" target="_blank" rel="noopener">GEO</a> datasets, at the raw-deposit level &mdash; the layer most reuse pipelines consume without re-checking. Each candidate is verified against the deposited data; only confirmed findings are listed.
+</p>
+
+<div class="audit">
+  <h2><a href="GSE68086_findings.html">GSE68086 &mdash; Tumor-Educated Platelets (Best et al., Cancer Cell 2015)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Blood-platelet RNA-seq, pan-cancer liquid biopsy (285 samples, 6 cancer types + healthy; 57,736 genes)</span>
+    <span>Generated: 2026-06-23</span>
+  </div>
+  <p class="summary">The canonical blood-platelet liquid-biopsy benchmark, heavily reused yet not previously audited at the raw-data level. Automated data-quality audit of the raw GEO deposit finds the dataset <strong>largely clean &mdash; no high-impact defect</strong>. One genuine data-entry error: <code>cell_type</code> is stored under two spellings &mdash; <code>Thrombocytes</code> (&times;245) and <code>thrombocytes</code> (&times;40) &mdash; a case-split that silently fragments the category in any group-by (confirmed in the raw column; the lowercase rows fall in one submission batch). The remaining items are real but expected-by-design: severe zero-inflation (85% zeros, with zeros denoting below-detection), batch&perp;cancer-type entanglement (Batch01 is GBM-only and cancer types are not randomized across runs &mdash; a confounder for naive class comparisons), a single within-patient replicate (<code>Lung-20</code> / <code>Lung-20-1</code>), and singleton mutation subtypes. Every candidate was checked against the deposited matrix before listing.</p>
+  <div class="tags">
+    <span class="tag tag-valid">largely clean</span>
+    <span class="tag tag-low">1 data-entry defect</span>
+    <span class="tag tag-info">batch-confound caveat</span>
+  </div>
+</div>
+
+<div class="footer">
+  Audits by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a> &middot;
+  <a href="index.html">paper audits</a> &middot;
+  <a href="https://github.com/shabtai/natural-joints-audits" target="_blank" rel="noopener">source</a>
+</div>
+
+</body>
+</html>
