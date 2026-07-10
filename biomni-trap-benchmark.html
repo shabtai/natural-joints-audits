@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natural Joints &mdash; Can a Clinical AI Agent Survive Real Trial-Data Traps?</title>
+<meta name="description" content="An adversarial test of the Biomni clinical AI agent against data traps and complicated cohorts from a public CDISC trial dataset, across two Gemini models.">
+<script data-goatcounter="https://natural-joints.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<style>
+  :root{
+    --bg:#F5F7F9; --surface:#FFFFFF; --raised:#FBFCFD;
+    --ink:#161A20; --muted:#5C6672; --faint:#8A93A0;
+    --border:#E3E7ED; --border-strong:#D2D8E0;
+    --accent:#0C7A82; --accent-soft:#E2F0F0;
+    --pass:#167A5B; --pass-bg:#E4F1EB; --pass-line:#2FA37C;
+    --partial:#B5791A; --partial-bg:#F6ECD8; --partial-line:#D19B34;
+    --break:#BC3A3A; --break-bg:#F7E3E2; --break-line:#D26461;
+    --font-display:ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0D1014; --surface:#151A20; --raised:#1A2029;
+      --ink:#E6EBF1; --muted:#9AA4B1; --faint:#6C7684;
+      --border:#262D36; --border-strong:#333C47;
+      --accent:#22C3C3; --accent-soft:#0F2A2C;
+      --pass:#40CC9A; --pass-bg:#0F251E; --pass-line:#2E8E6C;
+      --partial:#E3AD40; --partial-bg:#2A2211; --partial-line:#A87E28;
+      --break:#EE6E6A; --break-bg:#2C1616; --break-line:#B24C49;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1014; --surface:#151A20; --raised:#1A2029;
+    --ink:#E6EBF1; --muted:#9AA4B1; --faint:#6C7684;
+    --border:#262D36; --border-strong:#333C47;
+    --accent:#22C3C3; --accent-soft:#0F2A2C;
+    --pass:#40CC9A; --pass-bg:#0F251E; --pass-line:#2E8E6C;
+    --partial:#E3AD40; --partial-bg:#2A2211; --partial-line:#A87E28;
+    --break:#EE6E6A; --break-bg:#2C1616; --break-line:#B24C49;
+  }
+  :root[data-theme="light"]{
+    --bg:#F5F7F9; --surface:#FFFFFF; --raised:#FBFCFD;
+    --ink:#161A20; --muted:#5C6672; --faint:#8A93A0;
+    --border:#E3E7ED; --border-strong:#D2D8E0;
+    --accent:#0C7A82; --accent-soft:#E2F0F0;
+    --pass:#167A5B; --pass-bg:#E4F1EB; --pass-line:#2FA37C;
+    --partial:#B5791A; --partial-bg:#F6ECD8; --partial-line:#D19B34;
+    --break:#BC3A3A; --break-bg:#F7E3E2; --break-line:#D26461;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--font-display);line-height:1.55;
+    -webkit-font-smoothing:antialiased;font-size:16px}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(20px,5vw,64px) clamp(18px,5vw,40px)}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(30px,5.5vw,50px);line-height:1.04;letter-spacing:-.02em;
+    font-weight:800;margin:.35em 0 .28em;text-wrap:balance;max-width:17ch}
+  .lede{font-size:clamp(17px,2.3vw,20px);color:var(--muted);max-width:62ch;margin:0}
+  .lede b{color:var(--ink);font-weight:650}
+  a{color:var(--accent)}
+
+  /* two-model scoreboard */
+  .models{display:flex;flex-direction:column;gap:10px;margin:30px 0 6px}
+  .mrow{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
+    background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    padding:15px 18px;position:relative;overflow:hidden}
+  .mrow.win::before,.mrow.lose::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .mrow.win::before{background:var(--pass-line)} .mrow.lose::before{background:var(--break-line)}
+  .mrow .mname{font-family:var(--font-mono);font-size:14px;font-weight:600;padding-left:6px}
+  .mrow .mname small{display:block;font-size:11px;color:var(--faint);margin-top:3px;
+    letter-spacing:.03em;font-weight:400}
+  .counts{display:flex;gap:20px;font-variant-numeric:tabular-nums}
+  .counts .c{display:flex;flex-direction:column;align-items:center;min-width:44px}
+  .counts .c b{font-size:26px;font-weight:800;line-height:1}
+  .counts .c span{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:.07em;color:var(--muted);margin-top:5px}
+  .c.p b{color:var(--pass)} .c.u b{color:var(--partial)} .c.b b{color:var(--break)}
+
+  .meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:20px;
+    font-size:13.5px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:600}
+
+  .rule{height:1px;background:var(--border);border:0;margin:40px 0 0}
+
+  section h2{font-size:13px;font-family:var(--font-mono);letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;margin:40px 0 4px}
+  section .sub{color:var(--faint);font-size:14px;margin:0 0 20px;max-width:64ch}
+
+  /* headline callout */
+  .callout{background:var(--surface);border:1px solid var(--border-strong);
+    border-radius:18px;padding:clamp(20px,4vw,30px);margin-top:26px}
+  .callout .k{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--break);font-weight:700}
+  .callout h3{font-size:clamp(21px,3.2vw,27px);font-weight:800;letter-spacing:-.02em;
+    margin:.35em 0 .4em;text-wrap:balance}
+  .callout p{color:var(--muted);margin:0;max-width:66ch}
+  .callout p b{color:var(--ink)}
+
+  .flip-wrap{overflow-x:auto;margin-top:20px}
+  .flip{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+  .flip th{text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 12px;
+    border-bottom:1px solid var(--border-strong)}
+  .flip td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  .flip td.case{font-weight:600;font-size:13.5px}
+  .flip td.case small{display:block;font-family:var(--font-mono);color:var(--faint);
+    font-size:11px;font-weight:400;margin-top:2px}
+  .vp{font-family:var(--font-mono);font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    padding:3px 9px;border-radius:6px;white-space:nowrap}
+  .vp.pass{color:var(--pass);background:var(--pass-bg)}
+  .vp.partial{color:var(--partial);background:var(--partial-bg)}
+  .vp.break{color:var(--break);background:var(--break-bg)}
+  .delta{font-family:var(--font-mono);font-size:15px;font-weight:700;text-align:center}
+  .delta.worse{color:var(--break)} .delta.better{color:var(--pass)} .delta.same{color:var(--faint)}
+
+  /* case cards */
+  .case{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:0;margin:16px 0;overflow:hidden;display:grid;grid-template-columns:5px 1fr}
+  .case .stripe{width:5px}
+  .case.pass .stripe{background:var(--pass-line)}
+  .case.partial .stripe{background:var(--partial-line)}
+  .case.break .stripe{background:var(--break-line)}
+  .case .body{padding:20px clamp(16px,3vw,26px) 22px}
+  .chead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .code{font-family:var(--font-mono);font-size:12.5px;color:var(--faint);letter-spacing:.02em}
+  .pill{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-left:auto}
+  .pill.pass{color:var(--pass);background:var(--pass-bg)}
+  .pill.partial{color:var(--partial);background:var(--partial-bg)}
+  .pill.break{color:var(--break);background:var(--break-bg)}
+  .q{font-size:17px;font-weight:650;letter-spacing:-.01em;margin:0 0 4px;text-wrap:pretty}
+  .trap{font-size:13.5px;color:var(--muted);margin:0 0 16px}
+  .trap span{font-family:var(--font-mono);font-size:12px;color:var(--accent);
+    background:var(--accent-soft);padding:1px 6px;border-radius:5px}
+
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+  @media(max-width:560px){.cmp{grid-template-columns:1fr}}
+  .col{border:1px solid var(--border);border-radius:11px;background:var(--raised);
+    padding:12px 14px}
+  .col h4{margin:0 0 9px;font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;font-weight:600}
+  .col.truth h4{color:var(--accent)}
+  .col.agent h4{color:var(--muted)}
+  table.kv{width:100%;border-collapse:collapse;font-size:13.5px;
+    font-variant-numeric:tabular-nums}
+  table.kv td{padding:3px 0;vertical-align:top}
+  table.kv td.v{text-align:right;font-family:var(--font-mono);white-space:nowrap;padding-left:12px}
+  .col.truth td.v{color:var(--ink);font-weight:600}
+  .wrong{color:var(--break)!important}
+  .free{font-size:13.5px;color:var(--ink);margin:0}
+  .free.mut{color:var(--muted)}
+
+  .read{margin:15px 0 0;padding:12px 14px;border-radius:10px;font-size:14px;
+    display:flex;gap:10px;align-items:flex-start}
+  .case.pass .read{background:var(--pass-bg)}
+  .case.partial .read{background:var(--partial-bg)}
+  .case.break .read{background:var(--break-bg)}
+  .read .tag{font-family:var(--font-mono);font-weight:700;font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;padding-top:2px;white-space:nowrap}
+  .case.pass .read .tag{color:var(--pass)}
+  .case.partial .read .tag{color:var(--partial)}
+  .case.break .read .tag{color:var(--break)}
+  .read p{margin:0}
+  .g31{margin:12px 0 0;font-size:13px;color:var(--muted);
+    padding-top:12px;border-top:1px dashed var(--border-strong)}
+  .g31 b{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.05em;
+    padding:2px 7px;border-radius:5px;margin-right:6px}
+  .g31.pass b{color:var(--pass);background:var(--pass-bg)}
+  .g31.partial b{color:var(--partial);background:var(--partial-bg)}
+  .g31.break b{color:var(--break);background:var(--break-bg)}
+
+  /* method */
+  .method{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:clamp(18px,3.5vw,26px) clamp(20px,4vw,30px);margin-top:6px}
+  .steps{display:grid;gap:0;margin:0}
+  .step{display:grid;grid-template-columns:32px 1fr;gap:16px;padding:15px 0;
+    border-top:1px solid var(--border)}
+  .step:first-child{border-top:0;padding-top:2px}
+  .step .num{font-family:var(--font-mono);font-weight:800;font-size:16px;color:var(--accent);
+    font-variant-numeric:tabular-nums;line-height:1.3}
+  .step h4{margin:0 0 4px;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+  .step p{margin:0;font-size:14px;color:var(--muted);max-width:66ch}
+  .step p code{font-family:var(--font-mono);font-size:12px;background:var(--accent-soft);
+    color:var(--accent);padding:1px 5px;border-radius:4px}
+  .step p b{color:var(--ink)}
+
+  /* takeaway */
+  .takeaway{background:var(--surface);border:1px solid var(--border-strong);
+    border-radius:18px;padding:clamp(22px,4vw,34px);margin-top:38px}
+  .takeaway h3{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+  .takeaway p{color:var(--muted);margin:0 0 14px;max-width:66ch}
+  .takeaway p b{color:var(--ink)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+  @media(max-width:600px){.split{grid-template-columns:1fr}}
+  .split .box{border:1px solid var(--border);border-radius:12px;padding:15px 16px;background:var(--raised)}
+  .split .box .lab{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;margin:0 0 7px}
+  .split .box.good .lab{color:var(--pass)}
+  .split .box.bad .lab{color:var(--break)}
+  .split .box p{font-size:14px;color:var(--ink);margin:0}
+
+  .note{font-size:13px;color:var(--faint);margin-top:22px;padding-left:14px;
+    border-left:2px solid var(--border-strong);max-width:68ch}
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--border);
+    font-family:var(--font-mono);font-size:11.5px;color:var(--faint);
+    display:flex;flex-wrap:wrap;gap:6px 20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <p style="font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;margin:0 0 10px"><a href="index.html" style="color:var(--accent);text-decoration:none">&larr; Natural Joints audits</a></p>
+  <header>
+    <div class="eyebrow">Adversarial agent test &middot; clinical trial data</div>
+    <h1>Breaking a clinical agent on real trial-data traps</h1>
+    <p class="lede">We took the traps a data-QA enricher found in a CDISC trial dataset, turned each into a blind analyst question, and gave them to <b>Biomni</b> — an open clinical AI agent. Then we ran the whole set twice: on <b>Gemini 2.5 Pro</b>, and on Gemini's strongest model, <b>3.1 Pro</b>. Reaching for the stronger model didn't fix the breaks — it added one.</p>
+
+    <div class="models">
+      <div class="mrow win">
+        <div class="mname">gemini-2.5-pro<small>Biomni's tier at test time</small></div>
+        <div class="counts">
+          <div class="c p"><b>2</b><span>held</span></div>
+          <div class="c u"><b>2</b><span>shaky</span></div>
+          <div class="c b"><b>2</b><span>broke</span></div>
+        </div>
+      </div>
+      <div class="mrow lose">
+        <div class="mname">gemini-3.1-pro-preview<small>Gemini's strongest available model</small></div>
+        <div class="counts">
+          <div class="c p"><b>0</b><span>held</span></div>
+          <div class="c u"><b>3</b><span>shaky</span></div>
+          <div class="c b"><b>3</b><span>broke</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="meta">
+      <span><b>Agent:</b> Biomni 0.0.8</span>
+      <span><b>Data:</b> CDISC ADaM pilot (ADADAS + ADSL)</span>
+      <span><b>Ground truth:</b> deterministic pandas</span>
+      <span><b>Traps from:</b> semantic-enricher</span>
+    </div>
+  </header>
+
+  <hr class="rule">
+
+  <!-- MODEL COMPARISON -->
+  <section>
+    <div class="callout">
+      <div class="k">The counterintuitive result</div>
+      <h3>A stronger model made it worse, not better</h3>
+      <p>3.1 Pro rescued the two cases 2.5 Pro got wrong (it finally spotted the prorated totals, and got the treatment direction right) — but it <b>regressed four others</b>: two clean breaks (A2, B1), a cohort 2.5 Pro had computed <b>exactly</b> (B3), and pseudoreplication, where it reached the right conclusion but with wrong numbers. Its failure mode: over-filtering with the wrong flags and computing change-from-baseline in the wrong direction. Held-up cases fell from 2 to 0; breaks rose from 2 to 3. You can't buy your way out of the traps with a bigger model.</p>
+      <div class="flip-wrap">
+        <table class="flip">
+          <thead><tr><th>Case</th><th>2.5 Pro</th><th>3.1 Pro</th><th style="text-align:center">Shift</th></tr></thead>
+          <tbody>
+            <tr><td class="case">Pseudoreplication<small>A1 · trap</small></td>
+              <td><span class="vp pass">Held</span></td><td><span class="vp partial">Shaky</span></td><td class="delta worse">↓</td></tr>
+            <tr><td class="case">LOCF primary result<small>A2 · trap</small></td>
+              <td><span class="vp partial">Shaky</span></td><td><span class="vp break">Broke</span></td><td class="delta worse">↓</td></tr>
+            <tr><td class="case">Prorated totals<small>A3 · trap</small></td>
+              <td><span class="vp break">Broke</span></td><td><span class="vp partial">Shaky</span></td><td class="delta better">↑</td></tr>
+            <tr><td class="case">Efficacy ∩ completer<small>B1 · cohort</small></td>
+              <td><span class="vp partial">Shaky</span></td><td><span class="vp break">Broke</span></td><td class="delta worse">↓</td></tr>
+            <tr><td class="case">ITT vs completers<small>B2 · cohort</small></td>
+              <td><span class="vp break">Broke</span></td><td><span class="vp partial">Shaky</span></td><td class="delta better">↑</td></tr>
+            <tr><td class="case">Baseline-conditioned<small>B3 · cohort</small></td>
+              <td><span class="vp pass">Held</span></td><td><span class="vp break">Broke</span></td><td class="delta worse">↓</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px">Also observed operationally: 3.1-pro-preview <b>hung Biomni for 68+ minutes</b> on one case (the framework sets no HTTP request timeout, so a stalled preview-endpoint call blocks indefinitely). We re-ran that case under a hard wall-clock cap. Worth knowing before putting the preview model in a pipeline.</p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- METHOD -->
+  <section>
+    <h2>How the test works</h2>
+    <p class="sub">Six steps. The agent never sees the trap — only a question a real analyst would ask.</p>
+    <div class="method">
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div>
+          <h4>Start from real trial data</h4>
+          <p>The public CDISC ADaM pilot — a simulated Alzheimer's trial (ADAS-Cog efficacy table + subject-level table). Converted from <code>.xpt</code> to <code>.csv</code>, verified lossless: every numeric cell matches the original file.</p></div></div>
+        <div class="step"><span class="num">2</span><div>
+          <h4>Harvest the traps</h4>
+          <p>Run a data-QA enricher over the dataset. It surfaces the deceptive spots — <b>5 pseudoreplication warnings, a semantic-blank flag, prorated totals</b> (and one false positive we discard). These, plus the standard ADaM analysis structure, become the test bank.</p></div></div>
+        <div class="step"><span class="num">3</span><div>
+          <h4>Turn each trap into a blind question</h4>
+          <p>Word it the way a real analyst would ask — so the <b>correct</b> answer needs a fact the question never mentions: the <code>ANL01FL</code> analysis flag, that some totals are prorated, what "efficacy population" means. The agent gets <b>no hint</b> a trap exists.</p></div></div>
+        <div class="step"><span class="num">4</span><div>
+          <h4>Compute ground truth deterministically</h4>
+          <p>Solve every question in pandas with correct ADaM semantics — the answer key, computed independently of the agent and later verified by hand against the raw files.</p></div></div>
+        <div class="step"><span class="num">5</span><div>
+          <h4>Run the agent blind</h4>
+          <p>Biomni gets only the two file paths and one question, a <b>fresh agent per case</b> (no memory carryover), and writes &amp; executes its own pandas. The full set is run on <code>gemini-2.5-pro</code>, then again on <code>gemini-3.1-pro</code>.</p></div></div>
+        <div class="step"><span class="num">6</span><div>
+          <h4>Score against the key</h4>
+          <p>Compare the agent's reported numbers to ground truth — exact match is <b>Held</b>, wrong population/grain is <b>Broke</b>, right-but-flawed is <b>Shaky</b>. Corroborated by an independent LLM judge, then every verdict hand-checked.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <p class="sub" style="margin:26px 0 0;color:var(--muted);font-size:15px">The six cases in detail — primary verdicts and numbers are <b style="color:var(--ink)">gemini-2.5-pro</b>; each card notes what <b style="color:var(--ink)">3.1-pro</b> did differently.</p>
+
+  <!-- ASPECT 1 -->
+  <section>
+    <h2>Attack surface 1 &mdash; Data traps</h2>
+    <p class="sub">Deceptive structure in the data itself: wrong grain, hidden analysis flags, silently derived values.</p>
+
+    <!-- A1 -->
+    <article class="case pass">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">A1 · pseudoreplication</span><span class="pill pass">Held up</span></div>
+        <p class="q">Does patient age differ significantly across the three treatment arms? Across race groups?</p>
+        <p class="trap">Trap: <span>~49 rows per subject</span> — testing at row level inflates the F-statistic ~50×. Correct grain is one row per subject.</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth · subject grain (N=254)</h4>
+            <table class="kv"><tr><td>Age × arm</td><td class="v">F=0.52, p=0.59</td></tr>
+            <tr><td>Age × race</td><td class="v">F=2.45, p=0.088</td></tr>
+            <tr><td>(row-level trap)</td><td class="v">F=28 / 127, p≈0</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>Age × arm</td><td class="v">F=0.52, p=0.59</td></tr>
+            <tr><td>Age × race</td><td class="v">F=2.45, p=0.088</td></tr>
+            <tr><td>Conclusion</td><td class="v">not significant</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Held</span><p>Used the subject-level table for the test, so it never touched the inflated row grain. The enricher's most-flagged trap — walked around unprompted.</p></div>
+        <p class="g31 partial"><b>3.1 Pro · Shaky</b>Reached the right conclusion (non-significant) — but reported F=0.70/1.97, which don't match the correct subject-grain values (0.52/2.45, identical whether computed from ADSL or ADADAS). It dodged the row-level false-positive without running the clean test. Not a clean pass.</p>
+      </div>
+    </article>
+
+    <!-- A2 -->
+    <article class="case partial">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">A2 · analysis flag / LOCF</span><span class="pill partial">Unreliable</span></div>
+        <p class="q">Report the primary efficacy result: mean ADAS-Cog total change from baseline at Week 24, per arm, with N.</p>
+        <p class="trap">Trap: the pre-specified analysis records are marked <span>ANL01FL='Y'</span> (ITT with LOCF). Use any other row set and the N is wrong.</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth · ANL01FL='Y'</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+2.34 (N=86)</td></tr>
+            <tr><td>High dose</td><td class="v">+1.30 (N=84)</td></tr>
+            <tr><td>Low dose</td><td class="v">+1.84 (N=84)</td></tr>
+            <tr><td>Total N</td><td class="v">254</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+2.34 (N=86)</td></tr>
+            <tr><td>High dose</td><td class="v wrong">+1.33 (N=85)</td></tr>
+            <tr><td>Low dose</td><td class="v wrong">+1.76 (N=86)</td></tr>
+            <tr><td>Total N</td><td class="v wrong">257</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Drifted</span><p>Kept the right population and got the ranking and Placebo exactly — but <b>ignored the ANL01FL analysis flag</b> and counted all Week-24 rows, double-counting 3 subjects. Conclusion survives; the numbers wouldn't pass an audit.</p></div>
+        <p class="g31 break"><b>3.1 Pro · Broke</b>Over-filtered: referenced a non-existent parameter code and kept LOCF-imputed records only, returning N=73/84/73 with <b style="all:unset;font-family:inherit">negative</b> means — no longer the primary endpoint at all. Regressed.</p>
+      </div>
+    </article>
+
+    <!-- A3 -->
+    <article class="case break">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">A3 · derived / prorated values</span><span class="pill break">Broke</span></div>
+        <p class="q">Are all ADAS-Cog total scores valid complete sums, or are some derived from incomplete items? Quantify.</p>
+        <p class="trap">Trap: some totals are <span>prorated from missing items</span> — they show up as non-integer scores like 41.03. Most totals are clean; a small subset is not.</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth</h4>
+            <table class="kv"><tr><td>Prorated (fractional) totals</td><td class="v">33</td></tr>
+            <tr><td>Incomplete visits</td><td class="v">39 / 818</td></tr>
+            <tr><td>Missing the total entirely</td><td class="v">19</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>Records "affected"</td><td class="v wrong">818</td></tr>
+            <tr><td colspan="2" class="free mut">Returned the total visit count — the denominator — as the answer.</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Broke</span><p>Reported <b>818</b>, the total number of visits, not the affected subset. Never isolated the prorated / incomplete records — the exact integrity flaw the enricher raised at confidence 1.0.</p></div>
+        <p class="g31 partial"><b>3.1 Pro · Improved</b>Actually found it: identified <b style="all:unset;font-family:inherit">19</b> totals derived from incomplete items. A real, defensible count (though not the full 33 fractional set) — the one case the stronger model rescued.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ASPECT 2 -->
+  <section>
+    <h2>Attack surface 2 &mdash; Complicated cohorts</h2>
+    <p class="sub">Multi-condition populations where the answer hinges on which subjects you keep and how you derive the baseline.</p>
+
+    <!-- B1 -->
+    <article class="case partial">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">B1 · efficacy ∩ completer</span><span class="pill partial">Unreliable</span></div>
+        <p class="q">Mean Week-24 ADAS-Cog total change by arm, restricted to efficacy-population subjects who completed Week 24.</p>
+        <p class="trap">Trap: two flags must intersect — <span>EFFFL='Y'</span> and <span>COMP24FL='Y'</span> (N=118).</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth · EFFFL ∧ COMP24FL</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+2.141 (60)</td></tr>
+            <tr><td>High dose</td><td class="v">+1.275 (30)</td></tr>
+            <tr><td>Low dose</td><td class="v">+0.346 (28)</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+2.141</td></tr>
+            <tr><td>High dose</td><td class="v">+1.275</td></tr>
+            <tr><td>Low dose</td><td class="v wrong">+0.093</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Drifted</span><p>Placebo and High dose <b>exact to 4 decimals</b> — the cohort logic was right — but the Low-dose mean is off (0.09 vs 0.35) from a one-arm slip, and no N reported.</p></div>
+        <p class="g31 break"><b>3.1 Pro · Broke</b>All three arms wrong, two with flipped signs (High −2.22, Low −1.58 vs truth +1.28 / +0.35) — regressed from 2.5 Pro's near-miss into a full break.</p>
+      </div>
+    </article>
+
+    <!-- B2 -->
+    <article class="case break">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">B2 · ITT-LOCF vs completers</span><span class="pill break">Broke</span></div>
+        <p class="q">Week-24 effect (each arm minus placebo), computed two ways — full randomized population vs completers only. Do the conclusions agree?</p>
+        <p class="trap">Trap: LOCF fills dropouts in the ITT set; completers removes them. The <span>dose ranking reverses</span> between the two, and xanomeline is <span>better</span> than placebo.</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth · effect vs placebo</h4>
+            <table class="kv"><tr><td>ITT-LOCF · High</td><td class="v">−1.04</td></tr>
+            <tr><td>ITT-LOCF · Low</td><td class="v">−0.50</td></tr>
+            <tr><td>Completers · High</td><td class="v">−0.87</td></tr>
+            <tr><td>Completers · Low</td><td class="v">−1.80</td></tr>
+            <tr><td>Reading</td><td class="v">ranking flips</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>ITT-LOCF · High</td><td class="v wrong">+3.62</td></tr>
+            <tr><td>ITT-LOCF · Low</td><td class="v wrong">+3.18</td></tr>
+            <tr><td>Completers · High</td><td class="v wrong">+2.14</td></tr>
+            <tr><td>Completers · Low</td><td class="v wrong">+0.29</td></tr>
+            <tr><td>Reading</td><td class="v wrong">"both worse"</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Broke</span><p>The effect is <b>backwards</b>: 2.5 Pro reports xanomeline as <i>worse</i> than placebo; the truth is better. It also missed the ITT-vs-completers reversal, concluding the two analyses "agree."</p></div>
+        <p class="g31 partial"><b>3.1 Pro · Improved</b>Got the direction right (xanomeline better, negative effects) — but the magnitudes are ~3× too large and it <b style="all:unset;font-family:inherit">still missed the reversal</b>, again answering "they agree." Better, not right.</p>
+      </div>
+    </article>
+
+    <!-- B3 -->
+    <article class="case pass">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="chead"><span class="code">B3 · baseline-conditioned</span><span class="pill pass">Held up</span></div>
+        <p class="q">Among efficacy subjects with a higher baseline (ADAS-Cog total ≥ 30), mean Week-24 change by arm, with N.</p>
+        <p class="trap">Trap: threshold on the derived <span>BASE</span> column, not on the Week-24 value — then intersect with the efficacy population.</p>
+        <div class="cmp">
+          <div class="col truth"><h4>Ground truth · EFFFL ∧ BASE≥30</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+3.54 (21)</td></tr>
+            <tr><td>High dose</td><td class="v">+1.79 (17)</td></tr>
+            <tr><td>Low dose</td><td class="v">+0.57 (22)</td></tr></table>
+          </div>
+          <div class="col agent"><h4>Biomni · 2.5 Pro</h4>
+            <table class="kv"><tr><td>Placebo</td><td class="v">+3.54 (21)</td></tr>
+            <tr><td>High dose</td><td class="v">+1.79 (17)</td></tr>
+            <tr><td>Low dose</td><td class="v">+0.57 (22)</td></tr></table>
+          </div>
+        </div>
+        <div class="read"><span class="tag">Held</span><p>Exact match, N included. Derived the baseline from the right column and applied both conditions cleanly — a genuinely hard cohort, handled perfectly.</p></div>
+        <p class="g31 break"><b>3.1 Pro · Broke</b>Broke the case 2.5 Pro nailed: cohort N=14/10/8 (vs 21/17/22), means with flipped signs (High −2.00, Low −1.50). Mis-derived the baseline threshold and the change direction.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- TAKEAWAY -->
+  <div class="takeaway">
+    <h3>The break line isn't "can it compute" — and it isn't "which model"</h3>
+    <p>Both models handle the textbook statistical trap (pseudoreplication) unprompted. Both break where the answer depends on <b>facts that live in the data's provenance</b> — which rows are the analysis records, that some totals are prorated, that LOCF flips the dose ranking. Swapping in Gemini's strongest model just moved the breaks around: it rescued two cases and lost three, including one it had no business failing.</p>
+    <div class="split">
+      <div class="box good"><p class="lab">Held up when</p><p>the correct method is a general principle the model already carries — right grain, careful thresholding.</p></div>
+      <div class="box bad"><p class="lab">Broke when</p><p>the answer needs trial-specific knowledge: the analysis flag, prorated totals, the ITT-vs-completers reversal. A bigger model doesn't ship with those facts.</p></div>
+    </div>
+    <p style="margin-top:18px">On the one case a regulator cares about most — <b>does the drug work</b> — 2.5 Pro was backwards and 3.1 Pro missed the reversal. That's the value of pre-computed trap knowledge: it doesn't make the agent smarter or pick a better model, it <b>pins whatever agent you have to the right population</b> before it runs a number.</p>
+  </div>
+
+  <p class="note">Scope &amp; honesty: 6 cases, one run per model — a signal, not a statistically powered benchmark (3.1-pro's variance across reruns is untested). Verdicts are from <b>exact-number comparison to deterministic pandas ground truth, verified by hand</b>. An independent LLM judge, grading strictly, scored 3.1 Pro even harder — <b>5 broke / 1 shaky</b> (it also marked A1 and B2 as full breaks); the labels above take the more lenient reading, but the conclusion holds under either. The enricher wasn't flawless either: one of its 8 traps on this data — a "compositional data" flag on baseline BMI / education / weight — is a false positive. Cases were built only on its verified traps.</p>
+
+  <footer>
+    <span>CDISC ADaM pilot · public "Lzzt" trial</span>
+    <span>Biomni 0.0.8 · gemini-2.5-pro vs gemini-3.1-pro-preview</span>
+    <span>6 blind cases · pandas ground truth</span>
+    <span>2026-07-09</span>
+    <span>Audits by <a href="https://www.natural-joints.com/" style="color:var(--accent)" target="_blank" rel="noopener">Natural Joints</a> &middot; <a href="index.html" style="color:var(--accent)">all audits</a> &middot; <a href="https://github.com/shabtai/natural-joints-audits" style="color:var(--accent)" target="_blank" rel="noopener">source</a></span>
+  </footer>
+</div>
+</body>
+</html>

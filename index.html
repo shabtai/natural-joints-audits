@@ -41,6 +41,20 @@
 </p>
 
 <div class="audit">
+  <h2><a href="biomni-trap-benchmark.html">Biomni Clinical Agent &mdash; Trap &amp; Cohort Benchmark (CDISC Xanomeline pilot)</a></h2>
+  <div class="meta-row">
+    <span>Domain: Adversarial test of an open-source clinical AI agent (Biomni, 3.3k&#9733; Stanford) on data traps + complicated cohorts from the public CDISC ADaM pilot &mdash; two Gemini models</span>
+    <span>Generated: 2026-07-10</span>
+  </div>
+  <p class="summary">Not a data audit but an <strong>agent</strong> audit: six blind analyst questions &mdash; built from traps the enricher found (pseudoreplication, prorated totals, hidden analysis flags) and from multi-condition ADaM cohorts &mdash; posed to Biomni with no hint a trap exists, then scored against deterministic pandas ground truth. On <code>gemini-2.5-pro</code>: <strong>2 held, 2 shaky, 2 broke</strong>. The clean breaks are the ones that matter clinically &mdash; it reported the total visit count instead of the prorated-total subset, and on ITT-vs-completers it got the treatment effect <strong>backwards</strong> (xanomeline worse than placebo; the truth is better) while missing the dose-ranking reversal. Swapping in Gemini&rsquo;s strongest model (<code>3.1-pro</code>) made it <em>worse</em>, not better (0 held / 3 broke) &mdash; including breaking a cohort 2.5-pro had computed exactly. The break line is not &ldquo;can it compute&rdquo; but &ldquo;does it know the data.&rdquo; Every verdict hand-verified against the raw files; 6 cases at one run each &mdash; a signal, not a powered benchmark.</p>
+  <div class="tags">
+    <span class="tag tag-major">primary-endpoint reversal</span>
+    <span class="tag tag-moderate">stronger model regressed</span>
+    <span class="tag tag-info">agent benchmark</span>
+  </div>
+</div>
+
+<div class="audit">
   <h2><a href="convergecell.html">ConvergeCELL &mdash; Shahar et al., Converge Bio (bioRxiv 2026)</a></h2>
   <div class="meta-row">
     <span>Domain: Patient-level transcriptomics foundation model + drug-target ranking (single-cell &amp; bulk)</span>
