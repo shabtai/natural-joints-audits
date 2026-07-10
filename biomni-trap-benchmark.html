@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Natural Joints &mdash; Where a Biomedical AI Agent Breaks on Clinical-Trial Data</title>
-<meta name="description" content="An adversarial benchmark of the Biomni biomedical AI agent across 21 blind analysis questions in clinical-trial, single-cell, and obscure omics data. It breaks specifically on opaque CDISC clinical-trial conventions.">
+<title>Natural Joints &mdash; The Semantic Gap in Biomedical AI Agents (CDISC ADaM case study)</title>
+<meta name="description" content="A biomedical AI agent can execute an analysis correctly and still get the science wrong when a dataset's meaning lives in conventions and metadata. A controlled CDISC ADaM case study, with Biomni as the worked example.">
 <script data-goatcounter="https://natural-joints.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
   :root{
@@ -212,16 +212,16 @@
     <a href="index.html" style="color:var(--accent);text-decoration:none">&larr; Natural Joints audits</a></p>
 
   <header>
-    <div class="eyebrow">Agent benchmark &middot; clinical &amp; biomedical data</div>
-    <h1>We tried to break a biomedical AI agent. Here is exactly where it broke &mdash; and where it didn't.</h1>
-    <p class="lede">We ran <b>Biomni</b> &mdash; an open-source biomedical AI agent from Stanford (3.3k&#9733;) &mdash; on 21 blind analysis questions across three data domains. Each question was built from a real data trap and scored against deterministic ground truth we computed by hand. The agent is a strong data scientist. It fails in one specific, predictable place: <b>the opaque conventions of standardized clinical-trial data.</b></p>
+    <div class="eyebrow">Evaluating biomedical AI agents &middot; a CDISC ADaM case study</div>
+    <h1>The semantic gap in biomedical AI agents</h1>
+    <p class="lede">A biomedical agent can execute an analysis flawlessly and still get the science wrong &mdash; because a dataset's meaning often lives in its conventions and metadata, not in its values. We use the public <b>CDISC ADaM</b> clinical-trial standard as a controlled example where this is unavoidable, and <b>Biomni</b> (an open-source biomedical agent from Stanford) as the worked case: 21 blind questions across clinical-trial, single-cell, and omics data, each scored against deterministic ground truth we recomputed by hand. Biomni is a strong analyst &mdash; the gap it surfaces is about <b>semantic grounding</b>, and it is not unique to any one agent.</p>
 
     <div class="domains">
       <div class="dcard zone">
-        <div class="dt">Domain 1 &middot; the break zone</div>
+        <div class="dt">Domain 1 &middot; meaning in metadata</div>
         <div class="dn">Clinical trial (CDISC ADaM)</div>
         <p class="ds">Regulated analysis datasets whose meaning lives in documented flags &amp; derived columns.</p>
-        <div class="dscore"><span class="b">8&times; broke</span> &nbsp;/&nbsp; 14 cases</div>
+        <div class="dscore"><span class="b">8 of 14</span> broke (semantic)</div>
       </div>
       <div class="dcard ok">
         <div class="dt">Domain 2 &middot; held up</div>
@@ -246,32 +246,63 @@
 
   <hr class="rule">
 
-  <!-- HEADLINE FINDING -->
+  <!-- THREE LEVELS OF CORRECTNESS -->
   <section>
-    <h2>The finding</h2>
+    <h2>Three levels of correctness</h2>
     <div class="callout">
-      <div class="k">What actually predicts failure</div>
-      <h3>Not "can it compute" &mdash; and not how obscure the data is. It's whether the right answer is an <em>anomaly to spot</em> or an <em>opaque convention to follow</em>.</h3>
-      <p>Biomni handles general data-integrity work well, even on datasets it has never seen: it caught an <b>Excel gene&rarr;date corruption</b> in an obscure neuroblastoma table, flagged two <b>byte-identical duplicate tables</b> in a Rome microbiome study, and knew that only <b>978 of 12,328 LINCS genes are directly measured</b>. It aggregated 584,944 single cells to the donor level <b>unprompted</b> to avoid pseudoreplication. These are anomalies and well-documented conventions &mdash; things a good analyst, or a well-trained model, recognizes.</p>
-      <p>It breaks where the correct answer depends on an <b>opaque, dataset-specific convention</b> that looks like ordinary data: that <code>ANL01FL='Y'</code> marks the one analysis record per subject (with LOCF imputation already applied), that <code>ACTOT</code> is an 11-item subscore and not the sum of all 14 items, that a time-to-event median must be censoring-aware. Nothing looks wrong &mdash; you simply have to <b>know the rule</b>. That knowledge is niche and regulatory, and the model doesn't carry it.</p>
+      <div class="k">Where the gap is</div>
+      <h3>The agent almost always gets the computation right. The failures sit one level up &mdash; in what the data <em>means</em>.</h3>
+      <p>It helps to separate three things an analysis can get right or wrong. Biomni clears the first almost every time; the distinctive, repeatable failures are at the third.</p>
     </div>
+    <div class="method">
+      <div class="steps">
+        <div class="step"><span class="num">1</span><div>
+          <h4>Computational correctness</h4>
+          <p>Did the code run and produce the requested statistic? Biomni passes this consistently &mdash; it is a capable programmer that writes and executes its own analysis.</p></div></div>
+        <div class="step"><span class="num">2</span><div>
+          <h4>Statistical correctness</h4>
+          <p>Was the estimator appropriate &mdash; censoring handled, repeated measures aggregated to the right grain? Mostly yes, sometimes no: it took a plain median of censored survival times instead of a Kaplan&ndash;Meier estimate.</p></div></div>
+        <div class="step"><span class="num">3</span><div>
+          <h4>Domain-semantic correctness</h4>
+          <p>Did it honour the dataset's conventions &mdash; which record is the designated analysis record (<code>ANL01FL</code>), how a derived value was built (<code>CHG</code>; the <code>ACTOT</code> subscore definition), what a flag encodes? <b>This is where most of the failures live.</b> The values look ordinary; the meaning is defined in the standard, not the numbers.</p></div></div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:16px">Level 3 is the interesting one because it is invisible from the values alone. A CDISC ADaM table reads like ordinary clinical data, but variables such as <code>ANL01FL</code>, <code>CHG</code>, <code>BASE</code>, <code>AVAL</code>, and the censoring flags carry regulatory meaning fixed <em>outside</em> the cells. A plausible-but-invalid analysis is easy to produce and hard to notice &mdash; and, notably, Biomni handled the same class of hazard well when it was well-documented enough to be in general training (pseudoreplication, Excel gene&rarr;date corruption, duplicate tables, LINCS landmark genes). The gap is specifically the <b>under-documented, standard-defined</b> conventions.</p>
+  </section>
+
+  <!-- WHY AN EXPERT SUCCEEDS -->
+  <section>
+    <h2>Why a domain expert succeeds</h2>
+    <p class="sub">The same questions are routine for a clinical-trial programmer &mdash; not because they reason harder, but because they read the dataset's meaning from its standard rather than its values.</p>
+    <div class="res-wrap">
+      <table class="res">
+        <thead><tr><th>Question</th><th>A general analyst reaches for</th><th>A domain expert uses</th></tr></thead>
+        <tbody>
+          <tr><td class="cn">Primary treatment effect</td><td>change-from-baseline computed from the raw values</td><td>the ADaM derivations &mdash; the <code style="font-size:11px">ANL01FL</code> analysis record and the pre-computed <code style="font-size:11px">CHG</code></td></tr>
+          <tr><td class="cn">ADAS-Cog total (ACTOT)</td><td>the sum of the available item scores</td><td>the SAP-defined 11-item subscore derivation</td></tr>
+          <tr><td class="cn">Time-to-event median</td><td>the median of observed times</td><td>a Kaplan&ndash;Meier estimate that accounts for censoring</td></tr>
+          <tr><td class="cn">Analysis population</td><td>a count of all subjects in the table</td><td>the flagged analysis set (<code style="font-size:11px">EFFFL</code> / <code style="font-size:11px">ANL01FL</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The pattern: none of these are fixed by more reasoning. They require <b>semantic grounding</b> &mdash; knowing which convention applies before the first line of analysis. That is the capability the values alone cannot supply, and the one an agent has to be given rather than infer.</p>
   </section>
 
   <!-- METHOD -->
   <section>
     <h2>How the test works</h2>
-    <p class="sub">Six steps. The agent never sees the trap &mdash; only a question a real analyst would ask.</p>
+    <p class="sub">Six steps. The agent is never told a convention is at stake &mdash; it only sees a question a real analyst would ask.</p>
     <div class="method">
       <div class="steps">
         <div class="step"><span class="num">1</span><div>
           <h4>Start from real, public data</h4>
           <p>The public CDISC ADaM pilot (a simulated Alzheimer's trial), the Human Lung Cell Atlas, and three niche omics datasets. All conversions were verified lossless: every numeric cell matches the source file.</p></div></div>
         <div class="step"><span class="num">2</span><div>
-          <h4>Harvest the traps automatically</h4>
-          <p>A semantic data-QA enricher profiles each dataset and surfaces its deceptive spots &mdash; hidden analysis flags, prorated totals, pseudoreplication, duplicate tables. The traps come from the tool, not from cherry-picking.</p></div></div>
+          <h4>Surface the hidden conventions automatically</h4>
+          <p>A semantic data-QA enricher profiles each dataset and surfaces where meaning is implicit &mdash; analysis flags, prorated totals, pseudoreplication grain, duplicate tables. The cases come from the tool, not from cherry-picking.</p></div></div>
         <div class="step"><span class="num">3</span><div>
-          <h4>Turn each trap into a blind question</h4>
-          <p>Phrased the way a real analyst asks &mdash; so the <b>correct</b> answer needs a fact the question never states. The agent gets <b>no hint</b> a trap exists.</p></div></div>
+          <h4>Turn each into a blind question</h4>
+          <p>Phrased the way a real analyst asks &mdash; so the <b>correct</b> answer needs a convention the question never states. The agent gets <b>no hint</b> one is required.</p></div></div>
         <div class="step"><span class="num">4</span><div>
           <h4>Compute ground truth deterministically</h4>
           <p>Every question is solved independently in pandas with correct domain semantics, then <b>re-verified by hand</b> against the raw files before publication.</p></div></div>
@@ -329,7 +360,7 @@
 
   <!-- DEEP DIVE: CLINICAL -->
   <section>
-    <h2>Deep dive &mdash; the clinical break zone</h2>
+    <h2>Deep dive &mdash; the clinical semantic gap</h2>
     <p class="sub">The four cases that matter most, with the exact numbers. Primary verdict and figures are <b style="color:var(--ink)">gemini-2.5-pro</b>; each card notes what the stronger <b style="color:var(--ink)">gemini-3.1-pro</b> did differently.</p>
 
     <article class="case break">
@@ -337,7 +368,7 @@
       <div class="body">
         <div class="chead"><span class="code">B2 &middot; ITT-LOCF vs completers</span><span class="pill break">Broke</span></div>
         <p class="q">Week-24 treatment effect (each arm minus placebo), full randomized population vs completers only. Do the conclusions agree?</p>
-        <p class="trap">Trap: LOCF fills dropouts in the ITT set; completers removes them. The <span>dose ranking reverses</span>, and xanomeline is <span>better</span> than placebo (less worsening).</p>
+        <p class="trap">Hidden convention:LOCF fills dropouts in the ITT set; completers removes them. The <span>dose ranking reverses</span>, and xanomeline is <span>better</span> than placebo (less worsening).</p>
         <div class="cmp">
           <div class="col truth"><h4>Ground truth</h4>
             <table class="kv"><tr><td>ITT-LOCF &middot; High</td><td class="v">&minus;1.04</td></tr>
@@ -364,7 +395,7 @@
       <div class="body">
         <div class="chead"><span class="code">A3 &middot; prorated / derived totals</span><span class="pill break">Broke</span></div>
         <p class="q">Are all ADAS-Cog total scores valid complete sums, or are some derived from incomplete items? Quantify.</p>
-        <p class="trap">Trap: some totals are <span>prorated from missing items</span> and show up as non-integer scores; most are clean, a small subset is not.</p>
+        <p class="trap">Hidden convention:some totals are <span>prorated from missing items</span> and show up as non-integer scores; most are clean, a small subset is not.</p>
         <div class="cmp">
           <div class="col truth"><h4>Ground truth</h4>
             <table class="kv"><tr><td>Prorated (fractional) totals</td><td class="v">33</td></tr>
@@ -385,7 +416,7 @@
       <div class="body">
         <div class="chead"><span class="code">C2 &amp; H2 &middot; survival conventions</span><span class="pill break">Broke</span></div>
         <p class="q">Median time to the dermatologic event &mdash; among those who had it (C2), and across all subjects with censoring (H2).</p>
-        <p class="trap">Trap: time-to-event data is <span>censored</span>. A plain median of the time column ignores who actually had the event and who dropped out event-free.</p>
+        <p class="trap">Hidden convention:time-to-event data is <span>censored</span>. A plain median of the time column ignores who actually had the event and who dropped out event-free.</p>
         <div class="cmp">
           <div class="col truth"><h4>Ground truth</h4>
             <table class="kv"><tr><td>C2 &middot; median, events only</td><td class="v">27.5 d</td></tr>
@@ -456,14 +487,14 @@ calc  = items.groupby(['USUBJID','AVISIT'])['AVAL'].sum()
         <div class="cons"><b>Consequence:</b> final numbers match no valid analysis population.</div>
       </div>
 
-      <div class="why-close"><b>The stronger model was not reliably better.</b> Across the clinical set, gemini-3.1-pro rescued two cases but regressed three &mdash; and it thrashed: it tried <em>more</em> flag combinations without knowing which is authoritative. Reasoning harder does not substitute for knowing the standard.</div>
+      <div class="why-close"><b>Increasing model capability did not reliably resolve these failures.</b> Across the clinical set, gemini-3.1-pro rescued two cases but regressed on three &mdash; it applied stronger reasoning to an incorrect reading of the conventions, trying <em>more</em> flag combinations without knowing which is authoritative. Reasoning harder does not substitute for knowing the standard. (Prompting, temperature, and tool availability were held fixed; we report this as a directional observation, not a controlled scaling study.)</div>
     </div>
   </section>
 
   <!-- RELIABILITY FINDING -->
   <section>
-    <h2>A separate red flag &mdash; answers that contradict the code</h2>
-    <p class="sub">While hunting for failures on the preview model, we found a reliability issue distinct from domain knowledge.</p>
+    <h2>Reliability observations (separate from the semantic finding)</h2>
+    <p class="sub">An execution-pipeline observation, distinct from the semantic result above &mdash; reported apart so it does not dilute that finding.</p>
     <div class="rootcause">
       <p>On <b>gemini-3.1-pro (preview)</b>, Biomni repeatedly wrote <b>correct code</b> and then reported a <b>final number untethered to it</b>. This is not a convention error &mdash; the agent knew the convention &mdash; it is an orchestration/output-reliability failure of the agent&times;preview-model integration (the same pairing that also hung for 68 minutes on one run).</p>
       <div class="fail">
@@ -478,13 +509,13 @@ calc  = items.groupby(['USUBJID','AVISIT'])['AVAL'].sum()
 
   <!-- TAKEAWAY -->
   <div class="takeaway">
-    <h3>The competence boundary is domain provenance, not data science</h3>
-    <p>Biomni is a capable analyst. It sidesteps textbook statistical traps unprompted, catches corrupted and duplicated data on studies it has never seen, and reproduces exact cohorts. The wall it hits is specific and repeatable: <b>the opaque, documented conventions of standardized regulated data</b> &mdash; which record is the analysis record, how a derived value was built, what an assay actually measures.</p>
+    <h3>The missing piece is a semantic layer, not more reasoning</h3>
+    <p>Current biomedical agents are strong at execution and at anomalies the literature has documented. What they lack is a <b>semantic layer for scientific datasets</b>: a way to know that a table's meaning lives in conventions, metadata, and domain standards the values alone do not reveal. CDISC ADaM is a clean, controlled example &mdash; the standard is public and the correct interpretation is unambiguous &mdash; but the same gap appears wherever a dataset's contract is implicit.</p>
     <div class="split">
-      <div class="box good"><p class="lab">Held up when</p><p>the task is an anomaly to spot or a well-documented method to apply &mdash; duplicates, corrupted genes, pseudoreplication, landmark genes, censoring direction. General data-science competence, plus conventions the internet has written about.</p></div>
-      <div class="box bad"><p class="lab">Broke when</p><p>the answer requires an opaque provenance rule the model can't infer from the data: the analysis flag, the LOCF-imputed record, the subscore definition, the censoring-aware estimator. Niche, regulatory, under-documented &mdash; and load-bearing.</p></div>
+      <div class="box good"><p class="lab">Agents already do well</p><p>execute analysis code, and recognise hazards well-represented in training &mdash; pseudoreplication, corrupted or duplicated data, landmark-gene conventions. These held up even on datasets outside any training set.</p></div>
+      <div class="box bad"><p class="lab">The open gap</p><p>honouring under-documented, standard-defined semantics: which record is the analysis record, how a derived value was built, which estimator the design requires. The values are insufficient; the meaning is elsewhere.</p></div>
     </div>
-    <p style="margin-top:18px">This is a narrow but sharp conclusion. A bigger model does not fix it (the strongest one broke <em>more</em>). Obscurity of the dataset does not cause it (obscure omics passed). What fixes it is <b>supplying the convention</b> &mdash; pinning the agent to the right record, the right derivation, the right estimator before it computes. That is exactly the knowledge a domain-aware data layer can carry, and exactly where an unaided agent is most confidently wrong.</p>
+    <p style="margin-top:18px">Biomni is the <b>example here, not the target</b> &mdash; an unusually capable, openly available agent, which is exactly what makes it a clean test case. Its own direction (broad biomedical agents with tools, reasoning, and execution) and this finding are complementary: execution is not enough when a dataset's semantics are implicit. Closing the gap means <b>supplying the convention</b> &mdash; grounding the agent in the analysis record, the derivation, and the estimator before it computes. That is what a domain-aware semantic layer provides, and where an unaided agent is most confidently wrong.</p>
   </div>
 
   <p class="note"><b>Scope &amp; honesty.</b> 21 cases, one run per model &mdash; a signal, not a statistically powered benchmark; run-to-run variance is untested. Verdicts are from exact-number comparison to deterministic pandas ground truth, hand-verified against the raw files, and corroborated by an independent LLM judge (which graded the strong model even harder than shown here). All data is public. C4's "correct" answer is itself convention-ambiguous, and two of the strong-model breaks are entangled with the code-vs-answer reliability bug &mdash; both are flagged in place rather than folded into the headline. Every case was built on an independently verified trap and scored against ground truth we recomputed by hand.</p>

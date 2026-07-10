@@ -41,16 +41,16 @@
 </p>
 
 <div class="audit">
-  <h2><a href="biomni-trap-benchmark.html">Biomni Biomedical Agent &mdash; Multi-Domain Trap Benchmark</a></h2>
+  <h2><a href="biomni-trap-benchmark.html">The Semantic Gap in Biomedical AI Agents &mdash; a CDISC ADaM Case Study</a></h2>
   <div class="meta-row">
-    <span>Domain: Adversarial benchmark of an open-source biomedical AI agent (Biomni, 3.3k&#9733; Stanford) across 21 blind analysis questions &mdash; clinical-trial (CDISC ADaM), single-cell (HLCA), and obscure omics; two Gemini models</span>
+    <span>Domain: Evaluating whether biomedical AI agents honour the implicit semantics of scientific datasets &mdash; CDISC ADaM as a controlled example, with Biomni (open-source, Stanford) as the worked case; 21 blind questions across clinical-trial, single-cell &amp; omics data</span>
     <span>Generated: 2026-07-10</span>
   </div>
-  <p class="summary">Not a data audit but an <strong>agent</strong> audit. 21 blind questions built from real data traps, each scored against deterministic hand-verified ground truth. The agent is a strong data scientist &mdash; it caught an Excel gene&rarr;date corruption and byte-identical duplicate tables on <em>obscure</em> datasets it can't have memorized, and aggregated 584,944 single cells to donor level unprompted. It breaks in one specific place: the <strong>opaque conventions of standardized clinical-trial data</strong> (which record is the analysis record, how a derived value was built, censoring-aware estimators) &mdash; 8 of 14 clinical cases, including reporting the primary treatment effect <strong>backwards</strong>. A bigger model didn't help (the strongest broke more); dataset obscurity didn't cause it (obscure omics passed). Every failure re-verified against the raw files; a separate preview-model reliability bug (answers decoupled from the agent's own code) is flagged in place. 21 cases, one run each &mdash; a signal, not a powered benchmark.</p>
+  <p class="summary">A biomedical agent can execute an analysis correctly and still get the science wrong when a dataset's meaning lives in <strong>conventions and metadata</strong> rather than its values. Framed around three levels of correctness &mdash; computational, statistical, and domain-semantic &mdash; the agent clears the first almost always and fails most distinctively at the third. On the public CDISC ADaM pilot it reported the primary treatment effect <strong>backwards</strong> (recreating change-from-baseline instead of using the ANL01FL analysis flag and derived CHG), misread the ADAS-Cog total against its subscore definition, and took uncensored survival medians &mdash; while handling well-documented hazards (pseudoreplication, Excel gene&rarr;date corruption, duplicate tables, LINCS landmark genes) correctly, even on data outside any training set. Increasing model capability did not reliably help. Biomni is the <strong>example, not the target</strong>: the finding is a general limitation &mdash; execution is not enough without a semantic layer. All ground truth recomputed by hand; a separate model-endpoint reliability observation is reported apart.</p>
   <div class="tags">
-    <span class="tag tag-major">primary-endpoint reversal</span>
-    <span class="tag tag-info">agent benchmark</span>
-    <span class="tag tag-valid">generalization tested</span>
+    <span class="tag tag-info">semantic grounding</span>
+    <span class="tag tag-info">agent evaluation</span>
+    <span class="tag tag-valid">CDISC ADaM case study</span>
   </div>
 </div>
 
