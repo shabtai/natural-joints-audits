@@ -41,16 +41,16 @@
 </p>
 
 <div class="audit">
-  <h2><a href="biomni-trap-benchmark.html">Biomni Clinical Agent &mdash; Trap &amp; Cohort Benchmark (CDISC Xanomeline pilot)</a></h2>
+  <h2><a href="biomni-trap-benchmark.html">Biomni Biomedical Agent &mdash; Multi-Domain Trap Benchmark</a></h2>
   <div class="meta-row">
-    <span>Domain: Adversarial test of an open-source clinical AI agent (Biomni, 3.3k&#9733; Stanford) on data traps + complicated cohorts from the public CDISC ADaM pilot &mdash; two Gemini models</span>
+    <span>Domain: Adversarial benchmark of an open-source biomedical AI agent (Biomni, 3.3k&#9733; Stanford) across 21 blind analysis questions &mdash; clinical-trial (CDISC ADaM), single-cell (HLCA), and obscure omics; two Gemini models</span>
     <span>Generated: 2026-07-10</span>
   </div>
-  <p class="summary">Not a data audit but an <strong>agent</strong> audit: six blind analyst questions &mdash; built from traps the enricher found (pseudoreplication, prorated totals, hidden analysis flags) and from multi-condition ADaM cohorts &mdash; posed to Biomni with no hint a trap exists, then scored against deterministic pandas ground truth. On <code>gemini-2.5-pro</code>: <strong>2 held, 2 shaky, 2 broke</strong>. The clean breaks are the ones that matter clinically &mdash; it reported the total visit count instead of the prorated-total subset, and on ITT-vs-completers it got the treatment effect <strong>backwards</strong> (xanomeline worse than placebo; the truth is better) while missing the dose-ranking reversal. Swapping in Gemini&rsquo;s strongest model (<code>3.1-pro</code>) made it <em>worse</em>, not better (0 held / 3 broke) &mdash; including breaking a cohort 2.5-pro had computed exactly. The break line is not &ldquo;can it compute&rdquo; but &ldquo;does it know the data.&rdquo; Every verdict hand-verified against the raw files; 6 cases at one run each &mdash; a signal, not a powered benchmark.</p>
+  <p class="summary">Not a data audit but an <strong>agent</strong> audit. 21 blind questions built from real data traps, each scored against deterministic hand-verified ground truth. The agent is a strong data scientist &mdash; it caught an Excel gene&rarr;date corruption and byte-identical duplicate tables on <em>obscure</em> datasets it can't have memorized, and aggregated 584,944 single cells to donor level unprompted. It breaks in one specific place: the <strong>opaque conventions of standardized clinical-trial data</strong> (which record is the analysis record, how a derived value was built, censoring-aware estimators) &mdash; 8 of 14 clinical cases, including reporting the primary treatment effect <strong>backwards</strong>. A bigger model didn't help (the strongest broke more); dataset obscurity didn't cause it (obscure omics passed). Every failure re-verified against the raw files; a separate preview-model reliability bug (answers decoupled from the agent's own code) is flagged in place. 21 cases, one run each &mdash; a signal, not a powered benchmark.</p>
   <div class="tags">
     <span class="tag tag-major">primary-endpoint reversal</span>
-    <span class="tag tag-moderate">stronger model regressed</span>
     <span class="tag tag-info">agent benchmark</span>
+    <span class="tag tag-valid">generalization tested</span>
   </div>
 </div>
 
