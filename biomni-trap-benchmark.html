@@ -186,6 +186,31 @@
     color:var(--accent);padding:1px 5px;border-radius:4px}
   .step p b{color:var(--ink)}
 
+  /* why-it-failed */
+  .rootcause{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;
+    padding:clamp(18px,3.5vw,26px);margin-top:6px}
+  .rootcause > p{color:var(--muted);margin:0;max-width:66ch}
+  .rootcause > p b{color:var(--ink)}
+  .rootcause > p code{font-family:var(--font-mono);font-size:12px;background:var(--accent-soft);
+    color:var(--accent);padding:1px 5px;border-radius:4px}
+  .fail{border-top:1px solid var(--border);padding:18px 0 4px;margin-top:14px}
+  .fail .fl{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:3px}
+  .fail .fc{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.05em;
+    padding:2px 8px;border-radius:5px;color:var(--break);background:var(--break-bg)}
+  .fail .fd{font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+  pre.code{margin:11px 0 0;padding:13px 15px;border-radius:9px;overflow-x:auto;
+    background:var(--raised);border:1px solid var(--border);
+    font-family:var(--font-mono);font-size:12.5px;line-height:1.55;color:var(--ink);
+    white-space:pre;tab-size:2}
+  pre.code .cm{color:var(--faint)}
+  pre.code .hl{color:var(--break);font-weight:700}
+  pre.code .ok{color:var(--accent);font-weight:600}
+  .fail .cons{margin:11px 0 0;font-size:13.5px;color:var(--muted);max-width:66ch}
+  .fail .cons b{color:var(--ink)}
+  .rootcause .why-close{margin:22px 0 0;padding:15px 16px;border-radius:11px;
+    background:var(--partial-bg);font-size:14px;color:var(--ink)}
+  .rootcause .why-close b{color:var(--partial)}
+
   /* takeaway */
   .takeaway{background:var(--surface);border:1px solid var(--border-strong);
     border-radius:18px;padding:clamp(22px,4vw,34px);margin-top:38px}
@@ -466,6 +491,55 @@
         <p class="g31 break"><b>3.1 Pro · Broke</b>Broke the case 2.5 Pro nailed: cohort N=14/10/8 (vs 21/17/22), means with flipped signs (High −2.00, Low −1.50). Mis-derived the baseline threshold and the change direction.</p>
       </div>
     </article>
+  </section>
+
+  <!-- WHY IT FAILED -->
+  <section>
+    <h2>Why it failed &mdash; from the generated code</h2>
+    <p class="sub">Not arithmetic. Every wrong answer traces to one thing: the agent re-derives what the data already provides.</p>
+    <div class="rootcause">
+      <p>This is <b>ADaM</b> &mdash; the CDISC analysis data standard. It is <b>analysis-ready by design</b>: <code>ANL01FL='Y'</code> marks the exact record to use (LOCF already applied), <code>CHG</code> and <code>BASE</code> are the pre-computed change and baseline, and <code>PARAMCD='ACTOT'</code> is a specific named parameter. You are meant to <b>use</b> these columns. Both models instead treated the tables as generic data and rebuilt the statistics by hand &mdash; and the re-derivations are where they broke. Here is the actual code.</p>
+
+      <div class="fail">
+        <div class="fl"><span class="fc">B2 &middot; 2.5-pro</span><span class="fd">Hand-rolled the change &amp; LOCF, skipped the analysis flag</span></div>
+        <pre class="code"><span class="cm"># ignores the ready-made CHG column and the ANL01FL flag</span>
+baseline = merged[merged['AVISITN'] == merged['AVISITN'].min()]
+itt['CHG'] = itt['AVAL'] - itt['BASELINE']            <span class="cm"># recompute change</span>
+last = itt.loc[itt.groupby('USUBJID')['AVISITN'].idxmax()]  <span class="cm"># DIY LOCF</span>
+<span class="hl"># never filters ANL01FL == 'Y'  →  effect = +3.62  (truth: −1.04)</span></pre>
+        <div class="cons"><b>Consequence:</b> its self-built baseline and LOCF ran over the wrong record set and <b>inverted the treatment effect</b> &mdash; it called xanomeline worse than placebo when the data says better.</div>
+      </div>
+
+      <div class="fail">
+        <div class="fl"><span class="fc">A3 &middot; 2.5-pro</span><span class="fd">Misread what the total score <em>is</em></span></div>
+        <pre class="code">items = adadas[adadas['PARAMCD'] != 'ACTOT']          <span class="cm"># all 14 item scores</span>
+calc  = items.groupby(['USUBJID','AVISIT'])['AVAL'].sum()
+<span class="cm"># compares calc to reported ACTOT — but ACTOT is the</span>
+<span class="hl"># "Adas-Cog(11) Subscore": an 11-item subset, NOT the 14-item sum</span>
+<span class="cm"># verified: 0% of complete visits match (sum of 14 = 42, ACTOT = 13)</span></pre>
+        <div class="cons"><b>Consequence:</b> its reconstruction disagreed with <b>every</b> record, so it reported all <b>818</b> totals as "affected" &mdash; the whole column, not the ~33 genuinely prorated ones.</div>
+      </div>
+
+      <div class="fail">
+        <div class="fl"><span class="fc">A2 &middot; 3.1-pro</span><span class="fd">Hallucinated a parameter code, then thrashed on flags</span></div>
+        <pre class="code">filtered = adadas[(adadas['PARAMCD'] == <span class="hl">'ACT0111'</span>) &amp;   <span class="cm"># invented code</span>
+                  (adadas['DTYPE'] == 'LOCF') &amp; ...]      <span class="cm"># then tried</span>
+<span class="cm"># ITTFL / EFFFL / DTYPE / LOCF combinations in turn —</span>
+<span class="cm"># the real code is 'ACTOT'; never settles on ACTOT + ANL01FL='Y'</span></pre>
+        <div class="cons"><b>Consequence:</b> it mangled the label <em>"Adas-Cog(11)"</em> into a non-existent <code>ACT0111</code>, then cycled through flag combinations without converging. Final numbers match no valid analysis population.</div>
+      </div>
+
+      <div class="fail">
+        <div class="fl"><span class="fc">B2 &amp; B3 &middot; 3.1-pro</span><span class="fd">Right columns &mdash; but no analysis-record filter</span></div>
+        <pre class="code">df = adadas[(adadas['EFFFL']=='Y') &amp; (adadas['BASE'] &gt;= 30) &amp;
+            (adadas['AVISIT']=='Week 24')]   <span class="ok"># right columns...</span>
+result = df.groupby('TRTP')['CHG'].mean()    <span class="hl"># ...but no ANL01FL == 'Y'</span>
+<span class="cm"># averages the wrong Week-24 rows → N=14/10/8 (truth 21/17/22), signs flipped</span></pre>
+        <div class="cons"><b>Consequence:</b> it reached for the right variables but skipped the one flag that selects the analysis record, so it averaged the wrong set &mdash; wrong N, and magnitudes so off the ITT-vs-completers reversal vanished.</div>
+      </div>
+
+      <div class="why-close"><b>Why the stronger model was worse:</b> 3.1-pro <b>thrashed</b>. It tried <em>more</em> flag combinations than 2.5-pro &mdash; a smarter-looking attempt at rigor &mdash; but without knowing which flag is authoritative, the extra filtering landed it on wrong record sets. More effort, less reliability. Knowing the standard beats reasoning harder without it.</div>
+    </div>
   </section>
 
   <!-- TAKEAWAY -->
