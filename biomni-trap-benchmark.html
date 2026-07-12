@@ -285,7 +285,7 @@
         </tbody>
       </table>
     </div>
-    <p class="note">The pattern: none of these are fixed by more reasoning. They require <b>semantic grounding</b> &mdash; knowing which convention applies before the first line of analysis. That is the capability the values alone cannot supply, and the one an agent has to be given rather than infer.</p>
+    <p class="note">The pattern: a stronger model helps but does not close the gap &mdash; on the same questions the stronger Gemini rescued one of these cases and improved another, yet still missed the reversal and the rest. What closes it is <b>semantic grounding</b> &mdash; knowing which convention applies before the first line of analysis. That is the capability the values alone cannot supply, and the one an agent has to be given rather than infer.</p>
   </section>
 
   <!-- METHOD -->
@@ -509,7 +509,7 @@ calc  = items.groupby(['USUBJID','AVISIT'])['AVAL'].sum()
 
   <!-- TAKEAWAY -->
   <div class="takeaway">
-    <h3>The missing piece is a semantic layer, not more reasoning</h3>
+    <h3>The missing piece is a semantic layer, not just more reasoning</h3>
     <p>Current biomedical agents are strong at execution and at anomalies the literature has documented. What they lack is a <b>semantic layer for scientific datasets</b>: a way to know that a table's meaning lives in conventions, metadata, and domain standards the values alone do not reveal. CDISC ADaM is a clean, controlled example &mdash; the standard is public and the correct interpretation is unambiguous &mdash; but the same gap appears wherever a dataset's contract is implicit.</p>
     <div class="split">
       <div class="box good"><p class="lab">Agents already do well</p><p>execute analysis code, and recognise hazards well-represented in training &mdash; pseudoreplication, corrupted or duplicated data, landmark-gene conventions. These held up even on datasets outside any training set.</p></div>
