@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iPOP Aging &mdash; Audit Report</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
+  h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; margin-bottom: 0.4rem; }
+  .meta { color: #555; font-size: 0.9rem; margin-bottom: 2rem; }
+  .finding { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; border-left: 5px solid #888; }
+  .finding.critical  { border-left-color: #c0392b; }
+  .finding.major     { border-left-color: #e67e22; }
+  .finding.moderate  { border-left-color: #f1c40f; }
+  .finding-title { font-weight: 700; font-size: 1.05rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.8rem; }
+  .badge { font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verified  { background: #27ae60; color: white; }
+  .partial   { background: #f39c12; color: white; }
+  .novel     { background: #7f8c8d; color: white; }
+  .impact-major     { background: #c0392b; color: white; }
+  .impact-moderate  { background: #e67e22; color: white; }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88rem; font-family: 'SFMono-Regular', Consolas, monospace; }
+  pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; }
+  .meta-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.4rem 1rem; margin: 0.6rem 0; font-size: 0.88rem; }
+  .meta-label { font-weight: 600; color: #555; white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+  th { background: #2c3e50; color: white; padding: 0.5rem 0.8rem; text-align: left; }
+  td { padding: 0.45rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f8f9fa; }
+  .summary-box { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; }
+  .caveat-box { background: #fdf6e3; border: 1px solid #e6c97a; border-radius: 6px; padding: 1rem 1.4rem; margin: 1.5rem 0; font-size: 0.9rem; }
+  .section-note { font-size: 0.85rem; color: #666; font-style: italic; margin-bottom: 1rem; }
+  a { color: #2980b9; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<h1>iPOP Aging &mdash; Audit Report</h1>
+<div class="meta">
+  Generated: 2026-08-08 &nbsp;|&nbsp;
+  Dataset: iPOP multi-omics aging cohort (108 published participant rows, 10 omics, 11,305 molecules) &nbsp;|&nbsp;
+  Domain: Non-linear multi-omics dynamics of human aging &nbsp;|&nbsp;
+  Code: <a href="https://github.com/jaspershen-lab/ipop_aging" target="_blank" rel="noopener">jaspershen-lab/ipop_aging (235 R scripts)</a> &nbsp;|&nbsp;
+  Data: Nature Aging supplementary tables (MOESM3) + repository objects &nbsp;|&nbsp;
+  Paper: <a href="https://doi.org/10.1038/s43587-024-00692-2" target="_blank" rel="noopener">Shen et al., Nature Aging (2024)</a>
+  <div style="margin-top: 0.6rem; font-size: 0.9rem;">
+    Audit by <a href="https://www.natural-joints.com/" target="_blank" rel="noopener">Natural Joints</a>
+  </div>
+</div>
+
+<div class="summary-box">
+  <strong>Bottom line.</strong> The statistical evidence used to identify the reported aging crests (near ages 44 and 60) is not valid as reported:
+  <ul>
+    <li>The crest significance tests consume 91 LOESS-interpolated grid points as if they were independent observations; the real support for a window arm is as few as 6&ndash;9 participants.</li>
+    <li>The attainable significance is an exact function of the interpolation density alone &mdash; 2/C(2k,k) for k grid points per window arm: 1.0&nbsp;y &rarr; 1.1&times;10<sup>&minus;5</sup>; 0.5&nbsp;y, the published setting &rarr; 1.5&times;10<sup>&minus;11</sup>; 0.1&nbsp;y &rarr; 2.2&times;10<sup>&minus;59</sup> &mdash; and 17.9% of the 293,930 deposited test results sit exactly at the published setting&rsquo;s floor.</li>
+    <li>The full pipeline produces significant crests from pure-noise input: 59&ndash;88% of null molecules pass <em>q</em>&nbsp;&lt;&nbsp;0.05, with crests of their own.</li>
+  </ul>
+  Six further findings affect the stated scope of the conclusions, the integrity of the published supplementary tables, and the reproducibility of the supporting analyses. The central finding was independently established six weeks earlier in a preprint co-authored by two authors of the original paper, whose first author has since publicly acknowledged the permutation defect. The iPOP measurements themselves are not in dispute; the defect is in the inference built on them.<br><br>
+  The audit ran in three phases &mdash; semantic enrichment of the deposited tables (data only), two independent audits of the code (paper claims vs.&nbsp;code; code vs.&nbsp;data), and verification of every claim by recomputation against the raw files. Five of the seven findings rest on the deposited files alone; the section <em>How the deposited data relates to the pipeline</em> explains why that was possible.
+</div>
+
+<div class="caveat-box">
+  <strong>Novelty status</strong> (checked August 2026 against the deposited repository&rsquo;s issue tracker, PubPeer, press coverage, and the general public record):
+  <table>
+    <thead><tr><th style="width:14%">Finding</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Previously reported &mdash; <a href="https://doi.org/10.64898/2026.06.24.734079" target="_blank" rel="noopener">Carbonneau et al., bioRxiv 2026</a>, compared in detail below; the first author of the original paper has <a href="https://www.genomeweb.com/gene-expression-rna-sequencing/landmark-stanford-molecular-aging-study-called-question-over-data" target="_blank" rel="noopener">publicly acknowledged</a> the permutation defect as &ldquo;an honest methodological mistake.&rdquo;</td></tr>
+      <tr><td>2</td><td>Novel in its specifics. Cohort-generalizability concerns are public commonplace, and the 8-under-40 count is the paper&rsquo;s own published number; what is reported nowhere we searched is the contradiction between the claimed &ldquo;before all the analyses&rdquo; confounder adjustment and the deposited crest pipeline, and the asymmetric scoping of the paper&rsquo;s own concession.</td></tr>
+      <tr><td>3&ndash;7</td><td>Novel &mdash; no prior report located. The repository&rsquo;s nine GitHub issues are usage questions; none reports a defect found by this audit.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Method</h2>
+
+<p>Three phases, run in order. The two audits in Phase&nbsp;2 were mutually independent: each worked from its own reference frame with no access to the other&rsquo;s output. All phases were executed by Claude Fable&nbsp;5.</p>
+
+<h3>Phase 1 &mdash; Semantic enrichment of the deposited data</h3>
+
+<p><em>Input: the nine deposited tables. No analysis code, no paper text.</em></p>
+
+<p>Each table is characterized from its contents alone: its <strong>grain</strong> (what a single row represents), which columns function as identifiers rather than measurements or classifiers, which vocabularies are in use, and whether tables sharing a key agree on the columns they have in common. A table whose contents are impossible for the entity its name claims is flagged &mdash; the mechanism developed in <em>How the deposited data relates to the pipeline</em> below. Defects raised by this pass are then pursued by recomputing the tables directly.</p>
+
+<p>Output: <strong>225 reported defects</strong> across the nine tables &mdash; 223 column-level warnings and, above them, table-level verdicts of which 8 were failures.</p>
+
+<h3>Phase 2 &mdash; Two independent audits against the code</h3>
+
+<table>
+<thead>
+<tr><th style="width:23%">Audit</th><th style="width:33%">Reference frame</th><th>Question it answers</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Claims vs. code</strong></td><td>The published text against the deposited scripts</td><td>Does the program do what the paper says it does, and does the paper claim more than the program establishes?</td></tr>
+<tr><td><strong>Code vs. data</strong></td><td>The scripts&rsquo; assumptions against the files they read</td><td>Do the program&rsquo;s preconditions hold on the actual data &mdash; do the columns it indexes exist, do its filters select what they intend?</td></tr>
+</tbody>
+</table>
+
+<p>Both audits had the Phase&nbsp;1 output available to them, and neither was restricted to it. Whether the data is internally consistent is a Phase-1 question and is not re-asked here.</p>
+
+<h3>Phase 3 &mdash; Verification</h3>
+
+<p>Every claim was re-checked by recomputation against the raw CSVs with an independent toolchain; the deposited R scripts were analyzed but not executed, and effect sizes are reported only where they were actually measured. Findings marked VERIFIED were confirmed by at least one executed recomputation. Two Phase-1 errors were caught and reversed at this stage (an incorrectly expanded acronym, and a circular refutation of a corrupted identifier in which observed example values were treated as though they were an allowlist of permitted ones). No finding in this report rests on an unexecuted claim; the evidence ledger records the verification mode of each. Finally, two adversarial passes attempted to refute every finding &mdash; one against the primary artifacts, one against the paper&rsquo;s full text on argument logic; the sub-claims they refuted were removed or corrected, and the substantive corrections are recorded inside Findings&nbsp;1 and&nbsp;2.</p>
+
+<h2>Findings &mdash; how each was reached</h2>
+<p class="section-note">Which phase reached each finding. The first column means the defect is established by the deposited files, with no analysis code read.</p>
+
+<table>
+<thead>
+<tr><th>#</th><th>Finding</th><th>Phase 1 &mdash; enrichment<br>(data alone)</th><th>Claims<br>vs. code</th><th>Code<br>vs. data</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Crest significance computed on a LOESS grid labelled as samples</td><td><strong>yes</strong> &mdash; grain FAIL</td><td>yes</td><td>yes</td></tr>
+<tr><td>2</td><td>Claimed adjustment absent from the crest pipeline; scope asymmetry</td><td><strong>yes</strong> &mdash; the cohort counts</td><td><strong>yes</strong></td><td>&mdash;</td></tr>
+<tr><td>3</td><td>108 published rows are 104 people; 6% of clinical rows unjoinable</td><td><strong>yes</strong></td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>4</td><td>Two published clusterings conflict on 846/846 lipids</td><td><strong>yes</strong> &mdash; version-conflict FAIL</td><td>&mdash;</td><td>yes</td></tr>
+<tr><td>5</td><td>Corrupted subject and sample identifiers</td><td><strong>yes</strong></td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>6</td><td><code>GENETYPE</code> filter deletes 2,749 molecules</td><td>no</td><td>yes</td><td><strong>yes</strong></td></tr>
+<tr><td>7</td><td>Method defects in the marker analyses</td><td>no</td><td>&mdash;</td><td><strong>yes</strong></td></tr>
+</tbody>
+</table>
+
+<p>Finding&nbsp;1 was reached along all three routes; Findings&nbsp;2, 4 and&nbsp;6 along two. Findings&nbsp;3, 5 and&nbsp;7 were reached along one route each and rest entirely on the Phase-3 verification. Agreement between routes is a reason to trust a finding but not a substitute for that verification &mdash; routes that share a blind spot would agree just as readily, which is why every claim was recomputed against the raw files regardless of how many phases had reached it.</p>
+
+<h2>Findings &mdash; Class 1: inference</h2>
+<p class="section-note">The statistical support for a stated conclusion does not exist, independently of whether the data and the code are correct.</p>
+
+<!-- F1 -->
+<div class="finding critical">
+  <div class="finding-title">Finding 1 &mdash; The crest significance tests operate on LOESS-derived grid points rather than independent participants</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">INDEPENDENTLY CORROBORATED</span>
+    <span class="badge impact-major">CRITICAL</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Pseudoreplication &mdash; derived values analyzed as independent observations</span>
+    <span class="meta-label">Location</span><span><code>100-tools.R</code>:634 (<code>do_se_swan</code>); <code>cross_sectional_loess/DE-SWAN2.R</code>:33&ndash;44, 416&ndash;477; the deposited test cache <code>DE_SWAN/temp_data</code> (293,930 tests); <code>5_clinical_test/3_DEG.R</code>; <code>5_clinical_test/5_correlation_with_age.R</code>:60&ndash;83; <code>sample_info.csv</code></span>
+  </div>
+  <p><strong>Fact.</strong> The object the significance tests consume is not a sample table. <code>sample_info.csv</code> has 91 rows spanning ages 30.0 to 75.0 in exact 0.5-year steps, in which <code>sample_id</code> equals <code>age</code> on every row and <code>subject_id</code> is the constant string <code>"Subject"</code>. These are LOESS prediction-grid points &mdash; an intermediate of the analysis, exported into the deposit under the name of a sample table. The Wilcoxon sliding-window tests, the DEG ANOVA/t-tests, and the grid Spearman correlations all treat them as independent samples. Consumption is provable from the deposited result cache itself: across its 293,930 tests (11,305 molecules &times; 26 window centres) the minimum <em>p</em> is exactly 2/C(40,20)&nbsp;=&nbsp;1.45&times;10<sup>&minus;11</sup> &mdash; the complete-separation Wilcoxon floor for 20 grid points per arm &mdash; and <strong>17.9% of all tests sit exactly at that floor</strong>. Tests run on participants could not produce this fingerprint: their per-window arm sizes vary from 6 to 42, and the floor would differ at every centre.</p>
+  <p><strong>Consequence.</strong> The effective sample size of any window is the number of participants actually contributing data to it &mdash; as few as 6 (window centre 40), and 7&ndash;9 inside crest-1 windows &mdash; not the number of interpolated points the window contains.</p>
+  <p><strong>Demonstration 1a &mdash; the test cannot detect the paper&rsquo;s central contrast.</strong> Within a window, the smoothed curve makes the rank ordering nearly deterministic: any drift that fully separates the two arms returns the same floor <em>p</em>&nbsp;=&nbsp;1.45&times;10<sup>&minus;11</sup> regardless of effect magnitude, and a purely linear age effect produces it as readily as a sharp non-linear one. The statistic used to establish non-linearity does not distinguish non-linear change from linear change. Saturation alone does not localize the crests &mdash; the crest is a property of the significant-count curve across window centres, and 3,880 of the 11,305 molecules are significant at more than 80% of centres (a background whose removal step is present in the script but commented out) &mdash; which is why the causal claim rests on the null simulation below, not on the floor.</p>
+  <p><strong>Demonstration 1b &mdash; the attainable significance is a closed-form function of interpolation density.</strong> At complete separation the two-sided Wilcoxon <em>p</em> is exactly 2/C(2k,k), where k is the number of grid points per window arm &mdash; a quantity set by the grid step, not by the biology: 1.0&nbsp;y &rarr; 1.1&times;10<sup>&minus;5</sup>; 0.5&nbsp;y (the published setting) &rarr; 1.5&times;10<sup>&minus;11</sup>; 0.1&nbsp;y &rarr; 2.2&times;10<sup>&minus;59</sup>. The deposited cache&rsquo;s minimum <em>p</em> equals the k&nbsp;=&nbsp;20 value to nine digits. The reported significance is not invariant to an arbitrary numerical parameter of the interpolation grid.</p>
+  <p><strong>Causal validation.</strong> A full-pipeline simulation on pure-noise molecules with the cohort&rsquo;s age distribution puts <strong>59&ndash;88%</strong> of them below <em>q</em>&nbsp;&lt;&nbsp;0.05, and the noise itself generates crests. An independent re-run during adversarial review reproduced this (66&ndash;80% across LOESS spans) together with the two-hump, mid-50s-trough shape of the real curve; the specific crest ages produced by noise vary from run to run, which is itself the point.</p>
+  <p>The permutation block that could have flagged this is commented out at <code>DE-SWAN2.R</code>:416&ndash;477 &mdash; and would not have flagged it in any case, because it shuffles <code>object_cross_section_loess@sample_info$age</code>, i.e. permutes ages <em>after</em> the LOESS step. Points on a fitted curve are not exchangeable with respect to age, so shuffling at that stage yields an invalid null. Independent work shuffling before LOESS finds the peaks survive permutation.</p>
+  <p><strong>A correction from adversarial review.</strong> An earlier draft of this report claimed the per-omics crest ages in <code>DE-SWAN2.R</code> were hand-typed constants with no code path from any computed curve, citing a 61-vs-60 disagreement between two blocks of the script. Re-verification against the deposited cache refuted this: every value in both blocks is a local maximum of the computed per-class significance curves, and the apparent disagreement is the transcriptome-curve maximum (61) versus the all-molecule-curve maximum (60). The crest ages are transcriptions of computed outputs, and the claim is withdrawn.</p>
+  <p><strong>Effect on paper claims.</strong> This is the inference layer beneath the paper&rsquo;s central result. The claim at risk is not that the molecules were measured incorrectly, but that the reported crests represent a detected biological signal: on the deposited pipeline, a dataset with no age signal yields comparable significance counts and comparable crests. Contamination is downstream as well &mdash; crest molecule sets feed the pathway enrichment analysis and the correlation networks, both of which inherit the <em>q</em>-values.</p>
+</div>
+
+<!-- F2 -->
+<div class="finding major">
+  <div class="finding-title">Finding 2 &mdash; The confounder adjustment claimed for &ldquo;all the analyses&rdquo; is absent from the crest pipeline, whose age-44 contrast rests on a young flank the paper concedes only elsewhere</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-major">MAJOR</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Stated methods not performed for the headline analysis; asymmetric scoping of conceded limits</span>
+    <span class="meta-label">Location</span><span>Methods and Results text (PMC11564093); the 21 marker scripts (<code>lm_adjust</code>) vs the crest path (<code>2_loess_fit_cross_section.R</code>, <code>cross_sectional_loess/</code>); <code>supp_participant_information.csv</code></span>
+  </div>
+  <p><strong>Claimed adjustment, absent where the headline lives.</strong> The paper states: &ldquo;Before all the analyses, the confounders, such as BMI, sex, IRIS and ethnicity, were adjusted&rdquo; (Methods), and that this &ldquo;allow[s] us to discern the molecules and microbes genuinely associated with aging&rdquo; (Results). The deposited code contradicts this for the crest analysis. The 21 marker scripts call <code>lm_adjust</code> at analysis time on the shared per-omics <code>object_cross_section</code> inputs &mdash; which establishes that those inputs are deposited unadjusted, since adjusting pre-adjusted data would be redundant &mdash; while the crest path (LOESS fit &rarr; grid &rarr; DE-SWAN), which loads the same objects, contains no adjustment step anywhere. The headline analysis therefore runs on unadjusted data, in a cohort that is metabolically enriched by design and in which BMI, insulin-resistance status, and ethnicity trend along the age axis.</p>
+  <p><strong>The young flank, and where the paper concedes it.</strong> Crest&nbsp;1 is reported at age 44. DE-SWAN uses 20-year windows split into 10-year parcels, so the age-44 window&rsquo;s young parcel spans roughly ages 34&ndash;44 &mdash; drawn from at most the <strong>8 participants under 40</strong> plus the cohort&rsquo;s 40-to-44-year-olds. The 8-under-40 count is the paper&rsquo;s own published number, in its own limitations section &mdash; but that concession is scoped to deep-learning use and the robustness of Fig.&nbsp;1e, never to the crest analysis, which the paper separately calls robust, and the abstract carries no scope qualifier at all. The defect is not the number, which the paper discloses; it is the asymmetry &mdash; the concession is attached to everything except the claim it most undercuts.</p>
+  <p><strong>What the paper itself reports about individuals.</strong> The paper&rsquo;s own individual-level check &mdash; run on the participant with the longest follow-up (6.8 years, 367 samples) &mdash; found no obvious patterns, and its Discussion states that the observed changes &ldquo;occurred across individuals of varying ages rather than within the same individuals.&rdquo; By the paper&rsquo;s own account, the crest claims rest entirely on between-individual contrasts. Separately, the per-subject aggregation pins measurements spanning up to 6.8 years to a single enrollment age, discarding the longitudinal structure that is the cohort&rsquo;s main design advantage.</p>
+  <p><strong>A correction from adversarial review.</strong> An earlier draft led this finding with &ldquo;individual-level validation of the reported aging waves is based on a single participant.&rdquo; The paper makes no such validation claim: it reports the single-subject check as inconclusive and disclaims within-person inference twice. That component is withdrawn. Likewise withdrawn as a scope violation: &ldquo;only 68 of 104 participants have all ten omics&rdquo; &mdash; the paper claims ten omics were <em>acquired</em>, not that every participant has all ten, and discloses the incomplete overlap in its extended data; the coverage fact now annotates Finding&nbsp;3, where it belongs.</p>
+  <p><strong>Effect on paper claims.</strong> The robustness the paper claims for the crests rests in part on adjustment it did not perform there, and the crest-1 contrast is built against the thinnest part of the cohort under a concession the paper points elsewhere. This finding does not depend on Finding&nbsp;1, and it does not compound it &mdash; given Finding&nbsp;1, adjusted inputs would produce equally invalid crests. Its force is different in kind: it falsifies a statement about <em>what was done</em> rather than about what was found, voiding the paper&rsquo;s robustness narrative on its own terms; and it binds any future re-analysis &mdash; a statistics-only repair of Finding&nbsp;1 on this cohort still inherits an age-trending confounder structure that the claimed adjustment never touched for this analysis family.</p>
+</div>
+
+<h2>Findings &mdash; Class 2: data</h2>
+<p class="section-note">The deposited tables contradict the paper&rsquo;s description of them, or contradict each other. These hold regardless of what the analysis code does with them.</p>
+
+<!-- F3 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 3 &mdash; The published 108 participants are 104 people, and 6% of the supplementary clinical rows cannot be joined</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Entity resolution &mdash; one person counted twice</span>
+    <span class="meta-label">Location</span><span><code>summary_info/demongraphics_info.R</code>:379&ndash;389, 515&ndash;516; <code>supp_participant_information.csv</code>; <code>supp_participant_hba1c.csv</code></span>
+  </div>
+  <p>Participants who re-enrolled were renumbered from the <code>69-xxx</code> series into the <code>70-1xxx</code> series. The participant table is built at internal-ID grain, so those people appear twice, and <code>masstools::name_duplicated()</code> resolves the resulting collision by minting <code>_1</code>/<code>_2</code> suffixes rather than merging the rows:</p>
+  <pre>ZJXC41N_1  ZJXC41N_2
+ZRGK7U8_1  ZRGK7U8_2
+ZLTUJTN_1  ZLTUJTN_2
+ZKFV71L_1  ZKFV71L_2      &rarr; 108 published rows = 104 distinct people</pre>
+  <p>The paired rows carry byte-identical demographics; the <code>_2</code> rows contribute only cytokine counts. Two further identity defects sit alongside: participant ZIS22OE is absent from the table entirely (its only sample has a null adjusted age and is filtered out upstream) although its HbA1c row is published, and one HbA1c row has a blank participant ID that traces to orphan subject 70-1013. Net effect: <strong>58 of 969 published HbA1c rows (6%) cannot be joined to the published participant sheet</strong>. The duplication also corrupts derived counts: only 68 of the 104 people have data in all ten omics, but computed at published-row grain the number is 65, because three of the four duplicated participants have their coverage split across their two rows.</p>
+  <p><strong>Effect on paper claims.</strong> The reported participant count and the Table&nbsp;1 demographic summary are computed over a table in which four people are represented twice. The error is small in magnitude but sits in the denominator of every cohort-level proportion, and it makes the supplementary clinical table only partially joinable for anyone reusing it.</p>
+</div>
+
+<!-- F4 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 4 &mdash; Conflicting published clusterings (4A), and a normalization asymmetry beneath the dominant cluster (4B)</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Version conflict in published artifacts + preprocessing-driven structure</span>
+    <span class="meta-label">Location</span><span><code>variable_info.csv</code> vs <code>supp_clustering_of_all_molecules.csv</code>; <code>1_data_preparation.R</code>; Mfuzz clustering scripts</span>
+  </div>
+  <p><strong>4A &mdash; conflicting published cluster assignments (a provenance defect).</strong> The published variable dictionary carries a <code>cluster</code> column that is a stale lipid-only clustering, retained inside the lipidomics object and never dropped. The paper&rsquo;s global clustering is published separately. Joining the two on <code>variable_id</code>: the supplement assigns <strong>all 846 lipids to a single cluster</strong> (cluster&nbsp;8) while the dictionary splits the same 846 across seven &mdash; disagreement on every row, adjusted Rand index 0.0. These are two different analyses, not one clustering relabelled. The analysis scripts sidestep the stale column by calling <code>select(-cluster)</code> before joining (46 scripts do so), so the published figures use the global clustering; but a reader consuming the published variable dictionary as documentation gets the wrong cluster for the entire lipidome, with nothing marking which of the two is authoritative.</p>
+  <p><strong>4B &mdash; the dominant cluster is partly determined by normalization scale (an interpretation defect).</strong> Proteomics and lipidomics are mean-centered only, while the other omics are z-scored, and Mfuzz&rsquo;s <code>standardise()</code> call is commented out. The two unscaled omics consequently co-cluster by amplitude rather than by trajectory shape &mdash; which is what cluster&nbsp;8 contains: 100% of lipids, 96% of proteins, and 64% of cytokines. Measured on the actual clustering input, the two unscaled classes have median per-molecule SD 0.05 (lipidomics) and 0.16 (proteomics) against 0.64&ndash;1.0 for every scaled class; cluster&nbsp;8&rsquo;s median SD is 0.09 against 0.93&ndash;1.01 for every other cluster; and amplitude predicts membership within classes as well &mdash; proteins inside cluster&nbsp;8 have median SD 0.15 against 0.49 for those outside.</p>
+  <p>These are separate defects, and 4A is not evidence for 4B: the 846/846 conflict shows the published record is inconsistent, not that the clustering is an artifact. 4B rests on the scaling asymmetry alone.</p>
+  <p><strong>Effect on paper claims.</strong> Cluster composition is interpreted biologically in the paper; to the extent the dominant cluster is assembled by a normalization mismatch rather than shared temporal behaviour (4B), that interpretation does not follow. The dictionary conflict (4A) is a reuse hazard rather than a figure defect, but it is a total one.</p>
+</div>
+
+<!-- F5 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 5 &mdash; Four classes of identifier defects in the published clinical table, with no integrity guard anywhere in the pipeline</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Identity corruption surviving into per-subject aggregates</span>
+    <span class="meta-label">Location</span><span><code>clinical_info.csv</code>; no validation in any <code>1_data_preparation_cross_sectional.R</code></span>
+  </div>
+  <table>
+    <thead><tr><th style="width:26%">Defect class</th><th>Instance</th><th style="width:22%">Extent</th></tr></thead>
+    <tbody>
+      <tr><td>Split identity (corrupted key)</td><td>A corrupted subject ID <code>?69-106</code> holds part of participant 69-106&rsquo;s samples; both of its samples are prefixed <code>69-105-*</code>, and no subject 69-105 exists in the cohort. The cause is unexplained; nothing in the deposit accounts for it.</td><td>1 subject; its mean computed from half its data</td></tr>
+      <tr><td>Cross-subject misattribution</td><td>Sample <code>69-066-05</code> is filed under subject <code>69-055</code>, duplicating <code>69-055-05</code> on the same collection date.</td><td>1 sample; 1 same-date duplicate</td></tr>
+      <tr><td>Cross-scheme ownership</td><td>Subject <code>70-1014</code> owns 18 samples carrying <code>69-028-*</code> identifiers, with one visit recorded under both numbering schemes (<code>69-028-01</code> and <code>70-1014-01</code>, same date).</td><td>18 samples; 1 double-recorded visit</td></tr>
+      <tr><td>Masked duplicate rows</td><td>Row pairs identical across all non-ID columns, distinguishable only by their minted IDs.</td><td>4 pairs</td></tr>
+    </tbody>
+  </table>
+  <p>In total, 21 rows carry sample identifiers whose prefix disagrees with their subject assignment. No deposited preparation script validates the sample-to-subject mapping or deduplicates rows before subject means are taken, so the duplicated collection events pass every filter and double-weight the affected subjects.</p>
+  <p><strong>Effect on paper claims.</strong> The contamination is localized &mdash; it distorts the aggregates of a small number of subjects rather than the cohort-level result &mdash; but those aggregates are the unit of analysis, and the absence of any identity check means the pipeline has no mechanism that would have caught a larger version of the same problem.</p>
+</div>
+
+<h2>Findings &mdash; Class 3: implementation</h2>
+<p class="section-note">The deposited code computes something other than the analysis the paper describes. In each case a published number or figure does not follow from the program said to produce it.</p>
+
+<!-- F6 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 6 &mdash; The individual-level multi-omics analysis is not reproducible from the deposit, and the deposited script deletes 9 of 10 omics</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Filter on a column that exists for only one data class</span>
+    <span class="meta-label">Location</span><span><code>11_combined_omics/invidual_level/DE-SWAN2.R</code>:15&ndash;20; <code>heatmap.R</code></span>
+  </div>
+  <p>The individual-level &ldquo;combined multi-omics&rdquo; analysis opens by filtering on <code>GENETYPE</code>:</p>
+  <pre>object %&gt;%
+  activate_mass_dataset(what = "variable_info") %&gt;%
+  dplyr::filter(!is.na(GENETYPE)) %&gt;%
+  dplyr::filter(GENETYPE %in% c("GENETYPE", "protein-coding"))</pre>
+  <p><code>GENETYPE</code> is populated for the 8,556 transcriptome rows and is null for all ten other classes. The filter therefore deletes <strong>2,749 non-transcriptome molecules</strong> &mdash; every lipid, metabolite, protein, cytokine, clinical test, and microbiome feature &mdash; from an analysis whose stated purpose is to combine them. The literal <code>"GENETYPE"</code> inside the <code>%in%</code> is a pasted column header that matches zero rows &mdash; harmless in effect (every surviving row is <code>protein-coding</code>, so <code>!is.na()</code> does the deleting) but evidence the line was never exercised against the data. Three further facts about this script: the object it loads comes from a repository directory that <strong>does not exist in the deposit</strong>; its live DE-SWAN call examines only a 56.4&ndash;61.2 window band at &plusmn;0.4-year resolution; and every one of its eight <code>ggsave</code> calls is commented out.</p>
+  <p>In the same family, <code>heatmap.R</code> subsets all ten of its normalization blocks by a <code>data_type</code> column that the published variable table does not contain. Each block resolves to a zero-length assignment and silently does nothing, so the heatmap is drawn on un-rescaled data against a z-score colour scale (and applies <code>log2</code> to already-z-scored values, producing NaN below &minus;1).</p>
+  <p><strong>Verification mode.</strong> The filter&rsquo;s selectivity was verified by recomputation against the deposited tables: <code>GENETYPE</code> is null for every non-transcriptome row, and the literal <code>"GENETYPE"</code> matches zero rows. The R scripts themselves were not executed; the claim is about the deposited code and data as published. Whether this script produced any published figure is not established. What is established: the deposited individual-level analysis cannot be run from the deposit (its input object is absent), and the code that is present removes nine of ten omics.</p>
+  <p><strong>Effect on paper claims.</strong> The paper reports its individual-level check as inconclusive &mdash; no obvious patterns over the 6.8-year window &mdash; and draws no positive claim from it, so the effect here is on the published record rather than on a headline result: the deposited code behind that check cannot be run (its input object is absent), and the script that remains removes nine of ten omics before any statistic runs. The heatmap defect, by contrast, sits on a live figure path.</p>
+</div>
+
+<!-- F7 -->
+<div class="finding moderate">
+  <div class="finding-title">Finding 7 &mdash; Method defects in the marker analyses</div>
+  <div class="badges">
+    <span class="badge verified">VERIFIED</span>
+    <span class="badge novel">NOVEL</span>
+    <span class="badge impact-moderate">MODERATE</span>
+  </div>
+  <div class="meta-row">
+    <span class="meta-label">Rule type</span><span>Statistical-method defects in the covariate and significance machinery</span>
+    <span class="meta-label">Location</span><span>marker-analysis and residualization scripts; PERMANOVA blocks; <code>lm_adjusted_cor</code></span>
+  </div>
+  <p><strong>Primary.</strong></p>
+  <ul>
+    <li><strong>IRIS coded as ordinal.</strong> The insulin-resistance covariate takes three nominal values and is entered into the model numerically as Unknown=0, IR=1, IS=2 &mdash; an explicit <code>as.numeric</code> cast at <code>100-tools.R</code>:540&ndash;546, so <code>lm()</code> fits a single continuous slope rather than dummy-coding a factor. The ordering is also substantively odd: IR and IS are the two poles of the classification, yet the coding places Unknown at an end and IR between them. &ldquo;Unknown&rdquo; is <strong>38 of 108 participants</strong> &mdash; over a third of the cohort placed at one extreme of a scale that has no natural order. This variable sits in the residualization behind every marker test, so its effect is not confined to one table. An adjoining code comment claims ethnicity is also adjusted for; it does not appear in the model.</li>
+    <li><strong>PERMANOVA on signed residuals with Bray-Curtis.</strong> Bray-Curtis is undefined for negative values; <code>vegan</code>&rsquo;s documented behaviour on negative data is to warn that results may be meaningless and proceed, and the deposited scripts take no step to prevent it (not verified by execution).</li>
+  </ul>
+  <p><strong>Secondary &mdash; precision defects rather than direction-changing ones.</strong></p>
+  <ul>
+    <li><strong>Permutation count inflated by resampling.</strong> 100 permutations are resampled with replacement up to a reported 10,000, so the empirical <em>p</em> can be exactly 0 &mdash; and is then FDR-adjusted as though it were a genuine 10,000-permutation result.</li>
+    <li><strong>Double correction.</strong> A threshold of <code>p_value * 6 &lt; 0.05</code> &mdash; where the <code>p_value</code> column already holds FDR-adjusted values &mdash; applies a second Bonferroni factor on top of the adjustment, at ten sites.</li>
+    <li><strong>In-sample R<sup>2</sup>.</strong> A linear model with 46 predictors on roughly 100 subjects is reported without cross-validation &mdash; and the same line in the transcriptome script fits 8,556 predictors on ~100 samples, where R<sup>2</sup>&nbsp;=&nbsp;1 by construction.</li>
+  </ul>
+  <p><strong>Effect on paper claims.</strong> These affect the marker and association analyses rather than the crest figures. The IRIS coding is the most consequential: it enters the residuals the marker tests are computed on. The secondary items push in opposite directions and are best read as a loss of precision in the reported <em>p</em>-values rather than a reversal.</p>
+</div>
+
+<h2>Summary of findings</h2>
+
+<table>
+<thead>
+<tr><th>#</th><th>Class</th><th>Finding</th><th>Verified</th><th>Effect on results</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Inference</td><td>Crest significance computed on a 91-row LOESS grid labelled as samples; null simulation reproduces the crests</td><td>VERIFIED</td><td><strong>CRITICAL</strong> &mdash; 59&ndash;88% of pure noise passes <em>q</em>&nbsp;&lt;&nbsp;0.05; <em>p</em> varies with grid step; independently corroborated in the literature</td></tr>
+<tr><td>2</td><td>Inference</td><td>Confounder adjustment claimed for &ldquo;all the analyses&rdquo; is absent from the crest pipeline; crest-1&rsquo;s young flank is at most 8 under-40s, conceded by the paper only outside the crest claim</td><td>VERIFIED</td><td><strong>MAJOR</strong> &mdash; the headline analysis runs unadjusted in a confounder-trending cohort</td></tr>
+<tr><td>3</td><td>Data</td><td>108 published participant rows = 104 people; 58/969 HbA1c rows unjoinable</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; participant count and Table&nbsp;1 proportions; supplementary table partly unjoinable</td></tr>
+<tr><td>4</td><td>Data</td><td>4A: two published clusterings conflict on 846/846 lipids; 4B: dominant cluster partly determined by normalization scale</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; cluster-composition interpretation; total conflict in the published dictionary</td></tr>
+<tr><td>5</td><td>Data</td><td>Four classes of identifier defects (21 mismatched rows, 4 duplicate pairs); no integrity guard</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; distorts affected subjects&rsquo; means, which are the unit of analysis</td></tr>
+<tr><td>6</td><td>Implementation</td><td><code>GENETYPE</code> filter deletes 2,749 non-transcriptome molecules from the individual-level multi-omics analysis</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; individual-level multi-omics claim not reproducible from the deposited code</td></tr>
+<tr><td>7</td><td>Implementation</td><td>IRIS nominal covariate coded ordinally (38/108 at one extreme); Bray-Curtis on signed residuals; secondary precision defects</td><td>VERIFIED</td><td><strong>MODERATE</strong> &mdash; affects the marker analyses and the residuals they run on, not the core crest figures</td></tr>
+</tbody>
+</table>
+
+<h2>Evidence ledger</h2>
+<p class="section-note">Verification mode per finding. &ldquo;Executed verification&rdquo; means recomputation against the deposited CSVs with an independent toolchain; the deposited R scripts were not executed.</p>
+
+<table>
+<thead>
+<tr><th>#</th><th>Source artifacts</th><th>Static evidence</th><th>Executed verification</th><th>Independent corroboration</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>sample_info.csv</code>; <code>DE-SWAN2.R</code>; <code>100-tools.R</code></td><td>yes</td><td>yes &mdash; grid structure recomputed; closed-form floor identities; cache fingerprint (17.9% at exact floor); null simulation, independently re-run under adversarial review</td><td>Carbonneau et al. 2026</td></tr>
+<tr><td>2</td><td>paper full text (PMC11564093); marker scripts vs crest path; <code>supp_participant_information.csv</code></td><td>yes</td><td>yes &mdash; cohort counts recomputed; adjustment calls traced across all 21 marker scripts and the crest path; paper claims quoted from the full text</td><td>&mdash;</td></tr>
+<tr><td>3</td><td><code>supp_participant_information.csv</code>; <code>supp_participant_hba1c.csv</code></td><td>yes</td><td>yes &mdash; duplicate identities and joins recomputed</td><td>&mdash;</td></tr>
+<tr><td>4</td><td><code>variable_info.csv</code>; <code>supp_clustering_of_all_molecules.csv</code>; Mfuzz scripts</td><td>yes</td><td>yes &mdash; 846/846 conflict recomputed by join</td><td>&mdash;</td></tr>
+<tr><td>5</td><td><code>clinical_info.csv</code></td><td>yes</td><td>yes &mdash; duplicates and sample-to-subject mappings recomputed</td><td>&mdash;</td></tr>
+<tr><td>6</td><td><code>variable_info.csv</code>; <code>invidual_level/DE-SWAN2.R</code>; <code>heatmap.R</code></td><td>yes</td><td>partial &mdash; filter selectivity recomputed; input object confirmed absent from deposit; R not executed</td><td>&mdash;</td></tr>
+<tr><td>7</td><td>marker scripts; <code>clinical_info.csv</code></td><td>yes</td><td>partial &mdash; covariate coding and distribution recomputed; statistical procedures assessed from code</td><td>&mdash;</td></tr>
+</tbody>
+</table>
+
+<h2>How the deposited data relates to the pipeline</h2>
+
+<p>Five of the seven findings were reached from the deposited files alone. This section explains why a data-only pass can catch an inference error &mdash; a question with a precise answer, because the answer is a property of what a supplementary package actually is.</p>
+
+<p>A deposited data package is not a study&rsquo;s raw input; it is whatever the analysis workflow exported at the end. This deposit has two sources &mdash; three of the nine tables are Nature Aging supplement sheets, six are objects exported from the analysis repository &mdash; and the nine decompose into three provenance layers, with nothing in the deposit marking which is which:</p>
+
+<table>
+<thead>
+<tr><th style="width:16%">Layer</th><th style="width:46%">Tables</th><th>What a row is</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Measurement</strong></td><td><code>clinical_info</code>, <code>phenotype_data</code>, <code>supp_participant_information</code>, <code>supp_participant_hba1c</code></td><td>A record of the world: a collection event, a person, a lab value.</td></tr>
+<tr><td><strong>Annotation</strong></td><td><code>variable_info</code>, <code>sample_info_note</code>, <code>variable_info_note</code></td><td>A description of a variable: molecule annotations, data dictionaries.</td></tr>
+<tr><td><strong>Pipeline</strong></td><td><code>sample_info</code>, <code>supp_clustering_of_all_molecules</code>, and the <code>cluster</code> column inside <code>variable_info</code></td><td>An output of the analysis: a LOESS grid point; a cluster assignment with its model membership score; the residue of an earlier clustering run.</td></tr>
+</tbody>
+</table>
+
+<p>The third layer is the consequential one. <code>sample_info.csv</code> &mdash; the table the headline significance tests run on &mdash; is the LOESS prediction grid: an intermediate of the analysis, published under the name of data. The published package therefore carries the method&rsquo;s imprint, and an audit that reads only the data is not merely checking inputs; it is examining the pipeline through its exported artifacts:</p>
+
+<pre>measurements ──✗──▶ conclusions        (the reported pattern emerges even from null input)
+method       ──✓──▶ deposited package  (the pipeline's artifacts appear in the published data)</pre>
+
+<p>The findings split accordingly. Findings&nbsp;3 and&nbsp;5, and the cohort counts behind Finding&nbsp;2, are measurement-layer facts: miscounted people, corrupted identifiers. Findings&nbsp;1 and&nbsp;4 are read off the pipeline layer: a smoothing grid published as a sample table, and two clustering runs whose disagreement was preserved in the deposit. For Finding&nbsp;1 the division is sharp: <em>that the analysis unit is a grid of interpolated points rather than people is a fact about the published table</em>, established in Phase&nbsp;1; <em>which statistical tests consume it</em> is a fact about the code. The first is the defect; the second is its blast radius.</p>
+
+<h3>What Phase 1 reported, as issued</h3>
+
+<p>The eight table-level failures raised from the deposited files alone, and what each became:</p>
+
+<table>
+<thead>
+<tr><th style="width:52%">Reported, verbatim</th><th>Became</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>SAMPLE_INFO &mdash; ambiguous grain.</strong> &ldquo;The table claims a grain of &lsquo;one row per <code>sample_id</code>&rsquo;, but the <code>sample_id</code> column contains <strong>age points, not unique identifiers</strong>.&rdquo;</td>
+  <td rowspan="3"><strong>Finding 1.</strong> Three independent failures on one table, which together describe a LOESS prediction grid. None of the three names LOESS &mdash; the phase has no access to the method &mdash; but jointly they are impossible for a table of human samples.</td>
+</tr>
+<tr>
+  <td><strong>SAMPLE_INFO &mdash; domain coherence.</strong> &ldquo;<code>subject_id</code> is resolved as a classifier but holds the constant string <code>'Subject'</code>, meaning it does not contain a subject identifier.&rdquo;</td>
+</tr>
+<tr>
+  <td><strong>SAMPLE_INFO &mdash; role coherence.</strong> &ldquo;PK <code>'sample_id'</code> votes <code>'sample'</code>, but 1 body column(s) unanimously imply <code>'subject'</code> (age&rarr;subject).&rdquo;</td>
+</tr>
+<tr>
+  <td><strong>SUPP_CLUSTERING_OF_ALL_MOLECULES &mdash; version conflict.</strong> &ldquo;<code>SUPP_CLUSTERING_OF_ALL_MOLECULES</code> and <code>VARIABLE_INFO</code> share the same grain universe (<code>['variable_id']</code>) but <strong>DISAGREE on 2 shared column(s) for common keys</strong> &mdash; a silent version-conflict (which table is authoritative?)&rdquo;</td>
+  <td><strong>Finding 4A.</strong> The exact conflicting table pair was named without either being opened; the 846-of-846 rate was measured afterwards.</td>
+</tr>
+<tr>
+  <td><strong>VARIABLE_INFO &mdash; wrong dtype.</strong> &ldquo;All populated Entrez IDs are formatted as strings with a <code>.0</code> suffix (e.g. <code>'1.0'</code> instead of <code>'1'</code>).&rdquo;</td>
+  <td>Excluded scope &mdash; a reuse hazard that no published number depends on.</td>
+</tr>
+<tr>
+  <td><strong>PHENOTYPE_DATA &mdash; rollup contamination.</strong> &ldquo;The <code>diabetes_class</code> column mixes static baseline clinical states (Control, Prediabetic, Diabetic) with a study-design classification (&lsquo;Crossover&rsquo;, affecting 15% of rows).&rdquo;</td>
+  <td>Context for Finding&nbsp;2 &mdash; part of the cohort&rsquo;s metabolic enrichment &mdash; but not itself a finding.</td>
+</tr>
+<tr>
+  <td><strong>SUPP_PARTICIPANT_INFORMATION &mdash; ambiguous grain.</strong> The table claims one row per participant but carries day-range columns implying a temporal offset for a whole collection of samples.</td>
+  <td>Nothing. See the correction below.</td>
+</tr>
+<tr>
+  <td><strong>SAMPLE_INFO_NOTE &mdash; role coherence.</strong> The <code>meaning</code> column is resolved as a description but its values are identical to the <code>name</code> column.</td>
+  <td>Excluded scope &mdash; self-referential data dictionaries.</td>
+</tr>
+</tbody>
+</table>
+
+<p>Below the failure tier, the column-level warnings included two that bear directly on the findings: <strong>masked row duplicates</strong> in <code>clinical_info.csv</code> (&ldquo;dropping unique IDs reveals 8 rows (0.7%) that are perfectly identical across all 17 remaining columns&rdquo;), which became part of Finding&nbsp;5; and a <strong>whitespace sentinel</strong> in the HbA1c table (&ldquo;<code>Participant ID</code> contains 1 empty or whitespace-only string&rdquo;), which became the blank-identifier row of Finding&nbsp;3.</p>
+
+<p>One warning deserves separate mention because it is the same statistical failure class as Finding&nbsp;1, detected on a different table and quantified: <strong>pseudoreplication hierarchy</strong> in <code>clinical_info.csv</code> &mdash; &ldquo;Column <code>IRIS</code> is functionally dependent on <code>subject_id</code> (avg 10.2 rows per group). Testing <code>FPG</code> differences across <code>IRIS</code> at the row level yields a highly inflated F-statistic (<strong>F&nbsp;=&nbsp;86.4</strong>) due to pseudoreplication. When correctly aggregated to the true independent grain, the effect is weak or absent (<strong>F&nbsp;=&nbsp;1.9</strong>).&rdquo; The paper does not run this particular test, so it is not a finding; six such warnings were raised on that table alone.</p>
+
+<p><strong>A correction, since the negatives constrain the claim.</strong> Not every entry in the enrichment column came from an issued flag. The pass did <em>not</em> report the duplicated participants behind Finding&nbsp;3: its failure on <code>supp_participant_information.csv</code> was a different grain problem, and the <code>_2</code>-suffixed identifiers appear in its output only incidentally, as example values inside unrelated blank-column notes. That the 108 published rows are 104 people was established by recomputing the table directly. Similarly, the corrupted <code>?69-106</code> identifier was initially <em>dismissed</em> and recovered only under verification. What the column claims is that the fact is <em>obtainable</em> from the deposited files without reading any analysis code &mdash; not that a flag announced it.</p>
+
+<p><strong>A calibration point.</strong> Phase&nbsp;1 reports at two tiers, and all eight column-level notes on <code>sample_info.csv</code> were issued as ordinary warnings &mdash; &ldquo;consider dropping a redundant column&rdquo; hygiene advice of the kind a reader skims past; across the nine tables that tier produced 225 notes, 223 of them warnings. The three FAIL verdicts came from the tier above, which read the notes together and observed that they are <em>jointly</em> impossible for a table of human samples: a key that is a measurement, a subject column containing one subject, and a body column implying a different entity than the key. No single flag was decisive; the composition step was.</p>
+
+<h2>Comparison with the independent preprint</h2>
+
+<p>Six weeks before this audit, Carbonneau et al. posted <a href="https://doi.org/10.64898/2026.06.24.734079" target="_blank" rel="noopener">&ldquo;LOESS and DE-SWAN can induce artifactual &lsquo;waves&rsquo; of molecular aging&rdquo;</a> (bioRxiv, 2026-06-28), co-authored by two authors of the original paper. The two efforts reach the same central defect by methods that differ in kind. Theirs is <strong>synthetic</strong>: construct datasets with known ground truth &mdash; pure noise, or strictly linear signal &mdash; apply the reconstructed procedure, and prove by simulation what the procedure can manufacture. Ours is <strong>empirical</strong>: take the deposited artifacts as published and recompute what they contain. The synthetic route proves propositions about the <em>method</em>; the empirical route proves propositions about <em>this paper</em>. Neither substitutes for the other.</p>
+
+<h3>What Carbonneau et al. did, and what it proves</h3>
+
+<p>Their argument runs on simulated data and on one re-execution of the deposited transcriptomic analysis (<em>n</em>&nbsp;=&nbsp;97). Its results are properties of an estimator interacting with a distribution, and leave no trace in any deposited table:</p>
+
+<ul>
+  <li><strong>Mechanism.</strong> LOESS misbehaves specifically at the tails because data density is lower at the margins; Wilcoxon is especially vulnerable because &ldquo;the smoothness of the LOESS-interpolated curve makes the rank ordering often nearly monotonic from the left to the right side of the sample window.&rdquo;</li>
+  <li><strong>Magnitude.</strong> A single null gene moving from <em>p</em>&nbsp;=&nbsp;0.75 to <em>p</em>&nbsp;=&nbsp;1.8&times;10<sup>&minus;5</sup> purely by interpolation; the correlation between a window&rsquo;s sample size and its count of &ldquo;changing&rdquo; molecules.</li>
+  <li><strong>The control experiment.</strong> DE-SWAN run on the real iPOP transcriptome <em>without</em> LOESS yields no significant transcripts at all &mdash; the decisive causal test, which requires re-running the pipeline.</li>
+  <li><strong>Permutation ordering.</strong> Shuffling ages before versus after LOESS: only the former is a valid null, and the peaks survive it. This also corrects our own report &mdash; we initially described the commented-out permutation block as something that could have exposed the artifact; it could not, because it permutes after LOESS, the invalid variant.</li>
+  <li><strong>Artifact 3.</strong> DE-SWAN manufacturing waves from genuinely linear data through power variation, non-uniform age density, heteroskedasticity and outliers. We checked rather than assumed: Phase&nbsp;1 contains <em>zero</em> age-distribution, skew, heteroskedasticity or outlier flags, correctly so &mdash; a bell-shaped cohort age distribution is not a data defect. Their most general result has no data-level signature at all.</li>
+</ul>
+
+<p>What this proves: that the LOESS+DE-SWAN procedure <em>can</em> generate the reported pattern in the absence of any signal, and that the published permutation validation was run at the wrong exchangeability level. What it cannot prove by itself: that the published analysis instantiated the flawed configuration &mdash; a reconstruction is answerable in a way a deposited artifact is not.</p>
+
+<h3>What this audit did, and what it establishes</h3>
+
+<p>The empirical route works on the published objects directly, and five results fall outside the preprint&rsquo;s scope:</p>
+
+<ul>
+  <li><strong>The flawed object is materialized, not inferred.</strong> <code>sample_info.csv</code> shows what the procedure produced: 91 rows, <code>sample_id</code> equal to <code>age</code> in exact half-year steps, <code>subject_id</code> the constant string <code>"Subject"</code>. This closes the gap between &ldquo;the method can induce artifactual waves&rdquo; and &ldquo;this published object is the grid and these published tests consumed it.&rdquo;</li>
+
+  <li><strong>The grid-step dependence is closed-form, and the preprint never varies the step.</strong> It fixes interpolation at the published 0.5-year spacing and observes that gridding <em>amplifies</em> the artifact. The dependence is in fact exact: at complete separation <em>p</em>&nbsp;=&nbsp;2/C(2k,k) in the number of grid points per arm &mdash; 1.0&nbsp;y&nbsp;&rarr;&nbsp;1.1&times;10<sup>&minus;5</sup>, 0.5&nbsp;y&nbsp;&rarr;&nbsp;1.5&times;10<sup>&minus;11</sup>, 0.1&nbsp;y&nbsp;&rarr;&nbsp;2.2&times;10<sup>&minus;59</sup>. The attainable significance is a function of a free numerical parameter of the smoother, not of the underlying data &mdash; a stronger claim than amplification: the published <em>q</em>-values are not merely inflated but not interpretable as evidence.</li>
+
+  <li><strong>The test is blind to the contrast the paper is about.</strong> On the grid, any monotone drift returns the same <em>p</em> regardless of effect <em>magnitude</em> &mdash; a purely linear age effect and a sharp non-linear one yield identical significance (Demonstration&nbsp;1a). The preprint establishes the near-monotone ordering and, separately, placement-driven power variation; the effect-size independence result is beyond both.</li>
+
+  <li><strong>Consumption is proven from the deposited result cache.</strong> The preprint infers that the tests ran on interpolated points by reconstructing the workflow. The deposit proves it directly: the cached DE-SWAN output (293,930 tests) has minimum <em>p</em> exactly 2/C(40,20), with 17.9% of all tests at that floor &mdash; the arithmetic fingerprint of 20 grid points per arm, impossible for tests run on participants, whose arm sizes vary 6&ndash;42 across centres. This is visible only by examining the deposited artifacts, which a simulation-based critique has no reason to do.</li>
+
+  <li><strong>Everything outside the crest statistics.</strong> Findings 2&ndash;7 have no counterpart in the preprint: the cohort miscount, the identifier defects, the conflicting published clusterings, the <code>GENETYPE</code> filter, and the marker-analysis defects. Because the preprint&rsquo;s argument rests on null simulation, these defects do not weaken it &mdash; but they were sitting in the files it downloaded, and no one had looked.</li>
+</ul>
+
+<h3>Point-by-point convergence</h3>
+
+<p>Each Phase-1 failure on <code>sample_info.csv</code> has a counterpart in the preprint, stated in a different vocabulary &mdash; one route reading the artifact, the other simulating the procedure that made it:</p>
+
+<table>
+<thead>
+<tr><th style="width:44%">Reported here, from the file alone</th><th>Corresponding observation in Carbonneau et al.</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Ambiguous grain.</strong> The <code>sample_id</code> column contains &ldquo;age points, not unique identifiers.&rdquo;</td>
+  <td>&ldquo;LOESS-interpolated values are <strong>derived estimates, not independent observations</strong>, and should not be analyzed as though they were measured data.&rdquo;</td>
+</tr>
+<tr>
+  <td><strong>Domain coherence.</strong> <code>subject_id</code> &ldquo;contains exactly one distinct value <code>'Subject'</code> across 91 rows.&rdquo;</td>
+  <td>&ldquo;Each point along the curve is estimated relative to <strong>the same dataset</strong> and constrained to follow a smooth trajectory.&rdquo; &mdash; there is no distinct person behind any row, and the file states it literally.</td>
+</tr>
+<tr>
+  <td><strong>Exact duplicate columns.</strong> &ldquo;Columns <code>[sample_id, age]</code> are exact duplicates&rdquo;; downstream code &ldquo;treats the duplicate as an independent feature.&rdquo;</td>
+  <td>&ldquo;A statistical test assuming independent data points is instead being used on <strong>highly correlated data</strong>.&rdquo;</td>
+</tr>
+<tr>
+  <td><strong>Redundant data columns.</strong> The two columns are &ldquo;perfectly correlated with a constant ratio&rdquo; &mdash; 30.0 to 75.0 in fixed steps.</td>
+  <td>&ldquo;This artifactual trend is amplified when LOESS is used to interpolate data points across <strong>a uniform grid of points positioned every 0.5 years</strong>.&rdquo; &mdash; the preprint describes the grid as a procedure it simulated; the same grid is materialized in the deposited file.</td>
+</tr>
+<tr>
+  <td><strong>Granularity misinterpretation.</strong> &ldquo;Analysts counting rows may overstate population size.&rdquo;</td>
+  <td>The effective sample size in a window is the number of contributing subjects, not the number of grid points; counting grid points yields hundreds of false discoveries per window centre.</td>
+</tr>
+<tr>
+  <td><strong>Role coherence</strong> and <strong>name collision</strong> (<code>subject_id</code> denotes different entities in <code>CLINICAL_INFO</code> and <code>SAMPLE_INFO</code>).</td>
+  <td>No counterpart. These locate the seam &mdash; the point in the pipeline where people become curve coordinates. The preprint treats the grid as self-evidently a grid, since it reasons about a procedure rather than a received file.</td>
+</tr>
+</tbody>
+</table>
+
+<p>The two routes are also independent in what they attack, and they need each other. The preprint challenges the statistical support for the crests while explicitly declining to rule out non-linear molecular aging; Finding&nbsp;2 attacks a different axis &mdash; even granting the statistics, the crest-1 contrast draws its young flank from a cohort with 8 participants under 40, on data lacking the confounder adjustment the paper claims for all analyses. And in evidentiary terms, every Phase-1 failure is a <em>necessary</em> condition &mdash; a signature consistent with the flaw, never sufficient on its own &mdash; while the preprint&rsquo;s simulations are <em>sufficient</em> but cannot by themselves pin the flaw on the deposited pipeline. The file establishes that <em>this published object is the grid and these published tests consumed it</em>; the simulation establishes that <em>a grid consumed this way yields exactly this result</em>. The headline conclusion requires both, which is why the null simulation &mdash; not the file inspection &mdash; is the quantitative backbone of Finding&nbsp;1.</p>
+
+<h2>Reading guide</h2>
+
+<p>These findings do not claim the underlying measurements are wrong. The multi-omics assays, the molecule annotations, and the cohort itself are not in dispute, and nothing here rules out non-linear molecular aging as a phenomenon &mdash; the independent preprint is explicit on that point as well. What is in dispute is the inference structure built on top of the measurements: whether the reported crests are distinguishable from what the same pipeline produces on noise (Finding&nbsp;1), whether the stated adjustments and scope are honored by the crest analysis (Finding&nbsp;2), and whether the supporting analyses are reproducible from the deposited code (Findings&nbsp;4 and&nbsp;6). Correcting the identified data defects would not by itself rescue the crest inference, because the core significance procedure remains capable of generating the reported pattern under a null input.</p>
+
+<p>Excluded scope. The audit also produced findings that do not bear on the paper&rsquo;s claims and are omitted above. They are annotation defects in the published supplement that no analysis script consumes, and that damage external reuse only: five KEGG identifiers terminating in a Unicode replacement character; ten lipid saturation labels that are wrong (an <code>FFA(18:4)</code> labelled monounsaturated, and nine ceramide rows where the N-acyl chain&rsquo;s status overwrote the sphingoid backbone&rsquo;s); CAS registry numbers mangled by spreadsheet date coercion; integer gene identifiers cast to float; a header collision that collapses two distinct QC columns which differ on 687 of 814 metabolomics rows; trailing delimiters in a composite fatty-acid field; and data dictionaries in which every term&rsquo;s definition restates its own name. Also excluded are reproducibility-only defects that do not change a published number &mdash; a genus-label derivation that is a no-op, leaving all 675 microbiome names as raw sequence identifiers; scripts indexing a column under a name the published CSV does not use; a stale-binary dependency that makes one DEG script irreproducible as deposited; and a cross-study comparison in which six of eighteen hardcoded gene symbols match nothing in the deposited data through annotation drift.</p>
+
+</body>
+</html>
