@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPOP Aging &mdash; Significance on a Smoothing Grid</title>
+<title>The iPOP Aging Crest Tests: Statistical Significance on a LOESS Prediction Grid</title>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; color: #1a1a1a; background: #fafafa; }
   h1 { font-size: 1.8rem; border-bottom: 3px solid #1a1a1a; padding-bottom: 0.5rem; }
@@ -41,7 +41,7 @@
 </head>
 <body>
 
-<h1>Significance on a Smoothing Grid &mdash; the iPOP Aging Crest Statistics</h1>
+<h1>The iPOP Aging Crest Tests: Statistical Significance on a LOESS Prediction Grid</h1>
 <div class="meta">
   Generated: 2026-08-08 &nbsp;|&nbsp;
   A single-finding report; the complete audit (seven findings) is at <a href="shen.html">iPOP Aging &mdash; Audit Report</a> &nbsp;|&nbsp;
@@ -54,12 +54,12 @@
 </div>
 
 <div class="summary-box">
-  <strong>Bottom line.</strong> The statistical evidence for the reported aging crests near ages 44 and 60 is not valid as reported. The significance tests behind them consume 91 LOESS-interpolated grid points as if they were independent observations, while the real support for a window arm is as few as 6&ndash;9 participants; the attainable significance is an exact function of the interpolation density alone, 2/C(2k,k) for k grid points per arm; 17.9% of the 293,930 deposited test results sit exactly at the published setting&rsquo;s floor; and the full pipeline produces significant crests from pure-noise input.<br><br>
+  <strong>Bottom line.</strong> The DE-SWAN significance tests in the deposited analysis are applied to a LOESS prediction grid rather than to independent participant observations. At the published 0.5-year resolution, each 20-year window contributes 20 interpolated points per arm, while only 6&ndash;9 participants contribute to the windows around the reported crests. The deposited result cache carries the exact statistical fingerprint of this configuration: its minimum <em>p</em>-value matches the k&nbsp;=&nbsp;20 exact Wilcoxon floor, 2/C(40,20), and 17.9% of all 293,930 tests occur at that floor. Most importantly, the same LOESS/grid/Wilcoxon/FDR pipeline produces crest-like significance when run on pure-noise data. The reported statistical evidence for the aging crests is therefore not supported by valid independent-sample inference as implemented.<br><br>
   The same defect was established independently, six weeks earlier, by Carbonneau et al. &mdash; by the opposite kind of argument. Theirs is a mathematical demonstration on constructed data, not derived from the deposited record; ours is a systematic examination of the deposited code and data. This report presents the finding and the route by which a data-first audit reached it.
 </div>
 
 <div class="caveat-box">
-  <strong>Prior work.</strong> <a href="https://doi.org/10.64898/2026.06.24.734079" target="_blank" rel="noopener">Carbonneau et al., &ldquo;LOESS and DE-SWAN can induce artifactual &lsquo;waves&rsquo; of molecular aging&rdquo;</a> (bioRxiv, 2026-06-28), co-authored by two authors of the original paper, establishes the same central defect by simulation. The first author of the original paper has since <a href="https://www.genomeweb.com/gene-expression-rna-sequencing/landmark-stanford-molecular-aging-study-called-question-over-data" target="_blank" rel="noopener">publicly acknowledged</a> the permutation defect as &ldquo;an honest methodological mistake.&rdquo; The finding reported here is therefore not novel; what is new is the empirical route to it, the closed-form and fingerprint results below, and the attribution they license.
+  <strong>Prior work.</strong> <a href="https://doi.org/10.64898/2026.06.24.734079" target="_blank" rel="noopener">Carbonneau et al., &ldquo;LOESS and DE-SWAN can induce artifactual &lsquo;waves&rsquo; of molecular aging&rdquo;</a> (bioRxiv, 2026-06-28), co-authored by two authors of the original paper, establishes the same central defect by simulation. The first author of the original paper has since <a href="https://www.genomeweb.com/gene-expression-rna-sequencing/landmark-stanford-molecular-aging-study-called-question-over-data" target="_blank" rel="noopener">publicly acknowledged</a> the permutation defect as &ldquo;an honest methodological mistake.&rdquo; The central methodological defect is therefore not newly identified here. The contribution of this audit is different: it establishes the defect directly from the deposited artifacts, identifies the exact object the tests consume, derives the attainable-<em>p</em>-value fingerprint, verifies that fingerprint in the deposited results, and demonstrates the failure in the authors&rsquo; own data-processing configuration.
 </div>
 
 <h2>Method</h2>
@@ -67,10 +67,10 @@
 <p>Three phases, run in order, followed by two adversarial passes. The two audits in Phase&nbsp;2 were mutually independent: each worked from its own reference frame with no access to the other&rsquo;s output. All phases were executed by Claude Fable&nbsp;5.</p>
 
 <h3>Phase 1 &mdash; Semantic enrichment of the deposited data</h3>
-<p><em>Input: the nine deposited tables. No analysis code, no paper text.</em> Each table is characterized from its contents alone: its <strong>grain</strong> (what a single row represents), which columns function as identifiers rather than measurements or classifiers, and whether tables sharing a key agree on the columns they have in common. A table whose contents are impossible for the entity its name claims is flagged. Output across the nine tables: 225 defects &mdash; 223 column-level warnings and 8 table-level failures.</p>
+<p><em>Input: the nine deposited tables. No analysis code, no paper text.</em> Each table is characterized from its contents alone: its <strong>grain</strong> (what a single row represents), which columns function as identifiers rather than measurements or classifiers, and whether tables sharing a key agree on the columns they have in common. A table whose contents are impossible for the entity its name claims is flagged. The output is a persistent <strong>semantic layer</strong> written alongside the tables &mdash; per-table grain, column roles, vocabularies, and cross-table key relationships &mdash; with the defect reports sitting on top of it: 225 across the nine tables, 223 column-level warnings and 8 table-level failures. The layer, not just the flags, is what the next phases consume.</p>
 
 <h3>Phase 2 &mdash; Two independent audits against the code</h3>
-<p><strong>Claims vs. code</strong> holds the published text against the deposited scripts: does the program do what the paper says it does? <strong>Code vs. data</strong> holds the scripts&rsquo; assumptions against the files they read: do the program&rsquo;s preconditions hold on the actual data? Both had the Phase-1 output available; neither was restricted to it.</p>
+<p><strong>Claims vs. code</strong> holds the published text against the deposited scripts: does the program do what the paper says it does? <strong>Code vs. data</strong> holds the scripts&rsquo; assumptions against the files they read: do the program&rsquo;s preconditions hold on the actual data? Both ran with the full Phase-1 layer loaded &mdash; the grain and column-role descriptions as well as the flags &mdash; so when a script indexes a column or joins two tables, the auditor holds the semantic description of what those objects are; neither was restricted to the layer.</p>
 
 <h3>Phase 3 &mdash; Verification and adversarial review</h3>
 <p>Every claim was re-checked by recomputation against the raw CSVs with an independent toolchain; the deposited R scripts were analyzed but not executed. Two adversarial passes then attempted to refute every finding &mdash; one against the primary artifacts, one against the paper&rsquo;s full text on argument logic; refuted sub-claims were removed, and the corrections are recorded in the <a href="shen.html">full report</a>.</p>
@@ -92,7 +92,9 @@
 </tbody>
 </table>
 
-<p>No process that samples human beings produces this shape &mdash; measurement yields ragged ages, distinct identifiers, many subjects &mdash; and every deterministic interpolation over an age axis produces exactly this shape. The flags describe a table that is <strong>impossible as a record of the world and inevitable as the output of a smoother</strong>. What the data-only pass detected was therefore not dirty data: it was the pipeline itself, materialized in the data layer &mdash; the method&rsquo;s intermediate, exported into the deposit under the name of a sample table. Reading this table is reading the method.</p>
+<p>One term needs precision: a table does not literally &ldquo;claim&rdquo; a grain. The declared grain is read off the artifact&rsquo;s own self-description &mdash; a table named <code>sample_info</code> whose unique key column is named <code>sample_id</code> declares, by the ordinary semantics of those labels, one row per sample. That is the reading every consumer applies, and it is the reading the deposited tests enact when they treat each row as an independent sample. The flag therefore reports a contradiction internal to the deposit &mdash; between the table&rsquo;s labels and its values &mdash; not a mismatch between an auditor&rsquo;s assumption and the data.</p>
+
+<p>This shape is not consistent with a conventional participant-level sample table &mdash; ages appear on a perfectly regular grid, identifiers are non-unique, and the subject field is constant &mdash; and it is exactly what one expects of a prediction grid: <strong>characteristic of the output of a smoother evaluated at regular points</strong>. What the data-only pass detected was therefore not dirty data: it was the pipeline itself, materialized in the data layer &mdash; the method&rsquo;s intermediate, exported into the deposit under the name of a sample table. Reading this table is reading the method.</p>
 
 <p>None of the three flags names LOESS &mdash; the pass has no access to the method, so it can report the impossibility but not its cause. Two calibration facts constrain the claim. First, each individual note was issued as an ordinary warning &mdash; hygiene advice of the kind a reader skims past; the FAIL verdicts came from a composition step that read the notes together: a key that is a measurement, a subject column containing one subject, and a body column implying a different entity than the key. No single flag was decisive. Second, what the flags establish is a <em>necessary</em> condition &mdash; a signature consistent with a generated grid &mdash; not yet the identification of which procedure generated it or which tests consumed it. The remaining steps close that gap.</p>
 
@@ -100,15 +102,26 @@
 
 <p>The flagged table is <code>sample_info.csv</code>: 91 rows spanning ages 30.0 to 75.0 in exact 0.5-year steps, <code>sample_id</code> equal to <code>age</code> on every row, <code>subject_id</code> the constant <code>"Subject"</code> &mdash; a LOESS prediction grid, generated at <code>2_loess_fit_cross_section.R</code> and exported into the deposit under the name of a sample table. Both code audits traced its consumption: <code>do_se_swan</code> (<code>100-tools.R</code>:634) pulls its test variable from this object&rsquo;s <code>sample_info</code>; the call site (<code>cross_sectional_loess/DE-SWAN2.R</code>:33&ndash;44) runs window centres 40&ndash;65 with 20-year windows over it; the DEG tests (<code>5_clinical_test/3_DEG.R</code>) and the age correlations (<code>5_correlation_with_age.R</code>:60&ndash;83, Spearman on <code>as.numeric(sample_id)</code>) load the same grid objects. Three test families, one interpolated input.</p>
 
+<p>Interpolation is not itself the defect. A smooth curve may be entirely appropriate for visualization or estimation. The defect arises when interpolated values are subsequently treated as independent biological observations in hypothesis tests &mdash; which is what the traced call sites do.</p>
+
 <h3>What verification added</h3>
 
+<p><em>What the deposited record shows:</em></p>
+
 <ul>
-  <li><strong>The closed-form floor.</strong> At complete separation the two-sided Wilcoxon rank-sum <em>p</em> is exactly 2/C(2k,k), where k is the number of grid points per window arm &mdash; a quantity set by the interpolation step, not by the biology: k&nbsp;=&nbsp;10 (1.0-year step) &rarr; 1.1&times;10<sup>&minus;5</sup>; k&nbsp;=&nbsp;20 (the published 0.5-year step) &rarr; 1.45&times;10<sup>&minus;11</sup>; k&nbsp;=&nbsp;100 (0.1-year step) &rarr; 2.2&times;10<sup>&minus;59</sup>.</li>
-  <li><strong>The fingerprint in the deposited cache.</strong> The repository contains the cached DE-SWAN output: 293,930 tests (11,305 molecules &times; 26 window centres). Its minimum <em>p</em> equals the k&nbsp;=&nbsp;20 floor to nine digits, and <strong>17.9% of all tests sit exactly at that floor</strong>. Tests run on participants could not produce this structure: per-window arm sizes vary from 6 to 42 across centres, so the floor would differ at every centre. The deposited results were computed on the grid &mdash; established from the deposit itself, without executing anything.</li>
+  <li><strong>The closed-form floor.</strong> Under complete rank separation between the two arms, the two-sided exact Wilcoxon rank-sum <em>p</em> equals 2/C(2k,k) for equal arm sizes k &mdash; the smallest attainable value, set by the number of grid points per arm: k&nbsp;=&nbsp;10 (1.0-year step) &rarr; 1.1&times;10<sup>&minus;5</sup>; k&nbsp;=&nbsp;20 (the published 0.5-year step) &rarr; 1.45&times;10<sup>&minus;11</sup>; k&nbsp;=&nbsp;100 (0.1-year step) &rarr; 2.2&times;10<sup>&minus;59</sup>. The point is not that every monotone trend reaches this floor; it is that the floor itself is determined by grid density rather than participant count &mdash; changing the interpolation grid changes the attainable significance without adding a single participant.</li>
+  <li><strong>The fingerprint in the deposited cache.</strong> The repository contains the cached DE-SWAN output: 293,930 tests (11,305 molecules &times; 26 window centres). Its minimum <em>p</em> equals the k&nbsp;=&nbsp;20 floor to nine digits, and <strong>17.9% of all tests sit exactly at that floor</strong>. Had the Wilcoxon tests been performed on participant-level observations, the attainable exact <em>p</em> would depend on the participant count in each arm; because those counts vary substantially by window centre (6&ndash;42), a single global minimum matching the k&nbsp;=&nbsp;20 grid floor, recurring at the same value across all 26 centres, would not be expected. The deposited results carry the grid&rsquo;s fingerprint &mdash; established from the deposit itself, without executing anything.</li>
   <li><strong>Effective sample size.</strong> The number of participants actually contributing to a window arm is as few as 6 (centre 40) and 7&ndash;9 inside crest-1 windows &mdash; against 20 interpolated points per arm at the published step.</li>
-  <li><strong>The null simulation.</strong> The full pipeline &mdash; LOESS, half-year grid, sliding Wilcoxon, per-centre FDR &mdash; run on pure-noise molecules over the cohort&rsquo;s real age distribution puts 59&ndash;88% of them below <em>q</em>&nbsp;&lt;&nbsp;0.05 and generates crests of its own. An independent re-run during adversarial review reproduced this (66&ndash;80% across LOESS spans) together with the two-hump, mid-50s-trough shape of the real curve; the crest ages produced by noise vary from run to run, which is itself the point.</li>
   <li><strong>The permutation block.</strong> The validation that could have caught this is commented out (<code>DE-SWAN2.R</code>:416&ndash;477) &mdash; and shuffles ages <em>after</em> the LOESS step, an invalid null, since points on a fitted curve are not exchangeable with respect to age.</li>
 </ul>
+
+<p><em>What happens under a null:</em></p>
+
+<ul>
+  <li><strong>The null simulation.</strong> The inferential pipeline behind the crest significance &mdash; LOESS, half-year grid, sliding Wilcoxon, per-centre FDR &mdash; run on pure-noise molecules over the cohort&rsquo;s real age distribution puts 59&ndash;88% of them below <em>q</em>&nbsp;&lt;&nbsp;0.05 and generates crests of its own. An independent re-run during adversarial review reproduced this (66&ndash;80% across LOESS spans) together with the two-hump, mid-50s-trough shape of the real curve; the crest ages produced by noise vary from run to run, which is itself the point.</li>
+</ul>
+
+<p>Together, these establish both mechanism and consequence: the test configuration can manufacture the reported pattern without an age-dependent molecular signal.</p>
 
 <h2>The finding</h2>
 
@@ -125,15 +138,26 @@
   </div>
   <p><strong>Fact.</strong> The object the significance tests consume is not a sample table but a LOESS prediction grid published under the name of one. The Wilcoxon sliding-window tests, the DEG ANOVA/t-tests, and the grid Spearman correlations all treat its 91 interpolated points as independent samples.</p>
   <p><strong>Consequence.</strong> The effective sample size of any window is the number of participants contributing data to it &mdash; 6 to 9 where the crests live &mdash; not the number of interpolated points it contains.</p>
-  <p><strong>Blindness to the claimed contrast.</strong> The smoothed curve makes within-window rank ordering nearly deterministic: any drift that fully separates the arms returns the same floor <em>p</em> regardless of effect magnitude, so a purely linear age effect produces it as readily as a sharp non-linear one. The statistic used to establish non-linearity does not distinguish non-linear change from linear change. Saturation alone does not localize crests &mdash; the crest is a property of the significant-count curve across centres &mdash; which is why the causal claim rests on the null simulation, not on the floor.</p>
-  <p><strong>Dependence on a free parameter.</strong> The attainable significance is 2/C(2k,k) in the grid step; the deposited cache&rsquo;s minimum <em>p</em> matches the published step&rsquo;s value to nine digits, with 17.9% of all 293,930 tests exactly at it. The reported significance is not invariant to an arbitrary numerical parameter of the interpolation grid.</p>
-  <p><strong>Causal validation.</strong> Pure noise through the same pipeline yields 59&ndash;88% significance and crests of its own.</p>
+  <p><strong>Blindness to the claimed contrast.</strong> The smoothed curve makes within-window rank ordering nearly deterministic: once the two arms are completely rank-separated, the exact Wilcoxon statistic reaches its maximum regardless of the magnitude of the underlying effect, so a purely linear age effect produces the floor as readily as a sharp non-linear one. The statistic used to establish non-linearity does not distinguish non-linear change from linear change. Saturation alone does not localize crests &mdash; the crest is a property of the significant-count curve across centres &mdash; which is why the decisive demonstration is the null simulation, not the floor.</p>
+  <p><strong>Dependence on interpolation density.</strong> The attainable significance is 2/C(2k,k) in the grid step; the deposited cache&rsquo;s minimum <em>p</em> matches the published step&rsquo;s value to nine digits, with 17.9% of all 293,930 tests exactly at it. The attainable significance depends on interpolation density &mdash; a numerical parameter that adds no independent biological observations.</p>
+  <p><strong>Null validation.</strong> Pure noise passed through the same inferential pipeline yields 59&ndash;88% significance and crests of its own.</p>
   <p><strong>Effect on paper claims.</strong> This is the inference layer beneath the paper&rsquo;s central result. The claim at risk is not that the molecules were measured incorrectly, but that the reported crests represent a detected biological signal: on the deposited pipeline, a dataset with no age signal yields comparable significance counts and comparable crests. Downstream, the crest molecule sets feed the pathway enrichment and correlation-network analyses, which inherit the <em>q</em>-values.</p>
 </div>
 
-<h2>Point-by-point convergence</h2>
+<h2>What this finding does not establish</h2>
 
-<p>Each Phase-1 failure on <code>sample_info.csv</code> has a counterpart in the preprint, stated in a different vocabulary &mdash; one route reading the artifact, the other simulating the procedure that made it:</p>
+<ul>
+  <li>It does not show that the molecular measurements are fabricated or incorrect.</li>
+  <li>It does not show that non-linear molecular aging does not exist.</li>
+  <li>It does not show that LOESS itself is inappropriate.</li>
+  <li>It does not establish that every downstream biological interpretation is false.</li>
+</ul>
+
+<p>What it does establish: the reported participant-level significance cannot be obtained from the interpolated grid using independent-sample inference as implemented &mdash; and the same configuration produces crest-like significance under a pure-noise null.</p>
+
+<h2>Convergence between the data-first and simulation-first routes</h2>
+
+<p>Several independent observations made from the deposited files converge with the mechanism demonstrated by Carbonneau et al.; others are forensic observations about the deposited implementation with no simulation counterpart:</p>
 
 <table>
 <thead>
@@ -171,7 +195,7 @@
 
 <p>This report treats one finding. The complete audit of the same deposit &mdash; six further findings covering the cohort table, the published clusterings, identifier integrity, and the supporting analyses, with an evidence ledger and novelty status for each &mdash; is at <a href="shen.html">iPOP Aging &mdash; Audit Report</a>.</p>
 
-<p>Nothing here claims the underlying measurements are wrong, and nothing rules out non-linear molecular aging as a phenomenon &mdash; Carbonneau et al. are explicit on that point as well. What is established is narrower and sharper: the published statistical evidence for crests at 44 and 60 is generated by the analysis configuration rather than demonstrated by it, and this is provable from the deposited record alone, in closed form, by anyone.</p>
+<p>Nothing here claims the underlying measurements are wrong, and nothing rules out non-linear molecular aging as a phenomenon &mdash; Carbonneau et al. are explicit on that point as well. What is established is narrower and sharper: the reported significance cannot be interpreted as independent-sample evidence for aging crests, because the inferential sample consists of LOESS-derived values rather than independent participants &mdash; and the same configuration produces crest-like significance under a pure-noise null. Both facts are provable from the deposited record, by anyone.</p>
 
 </body>
 </html>
