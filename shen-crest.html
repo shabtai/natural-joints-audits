@@ -43,7 +43,7 @@
 
 <h1>The iPOP Aging Crest Tests: Statistical Significance on a LOESS Prediction Grid</h1>
 <div class="meta">
-  Generated: 2026-08-08 &nbsp;|&nbsp;
+  Generated: 2026-08-08 &nbsp;|&nbsp; Updated: 2026-08-16 (automated lineage reconstruction) &nbsp;|&nbsp;
   A single-finding report; the complete audit (seven findings) is at <a href="shen.html">iPOP Aging &mdash; Audit Report</a> &nbsp;|&nbsp;
   Code: <a href="https://github.com/jaspershen-lab/ipop_aging" target="_blank" rel="noopener">jaspershen-lab/ipop_aging (235 R scripts)</a> &nbsp;|&nbsp;
   Data: Nature Aging supplementary tables (MOESM3) + repository objects &nbsp;|&nbsp;
@@ -95,6 +95,47 @@
 <p>One term needs precision: a table does not literally &ldquo;claim&rdquo; a grain. The declared grain is read off the artifact&rsquo;s own self-description &mdash; a table named <code>sample_info</code> whose unique key column is named <code>sample_id</code> declares, by the ordinary semantics of those labels, one row per sample. That is the reading every consumer applies, and it is the reading the deposited tests enact when they treat each row as an independent sample. The flag therefore reports a contradiction internal to the deposit &mdash; between the table&rsquo;s labels and its values &mdash; not a mismatch between an auditor&rsquo;s assumption and the data.</p>
 
 <p>This shape is not consistent with a conventional participant-level sample table &mdash; ages appear on a perfectly regular grid, identifiers are non-unique, and the subject field is constant &mdash; and it is exactly what one expects of a prediction grid: <strong>characteristic of the output of a smoother evaluated at regular points</strong>. What the data-only pass detected was therefore not dirty data: it was the pipeline itself, materialized in the data layer &mdash; the method&rsquo;s intermediate, exported into the deposit under the name of a sample table. Reading this table is reading the method.</p>
+
+<p><strong>The object itself, against a genuine sample table.</strong> The deposit contains both kinds, and the contrast is the finding in miniature. Real collection events in this study look like the left column; <code>sample_info.csv</code> is the right:</p>
+
+<pre>clinical_info.csv (measurement layer)      sample_info.csv (the flagged table)
+subject_id  sample_id   collection_date    sample_id  class    subject_id  age
+"69-001"    "69-001-01" 2010-03-29         30.0       Subject  Subject     30.0
+"69-001"    "69-001-02" 2010-04-02         30.5       Subject  Subject     30.5
+...  (1,093 events, 104 people,            31.0       Subject  Subject     31.0
+      ages 25.9&ndash;75.2, irregular)            ...  (91 rows, one "subject",
+                                                 ages 30.0&ndash;75.0 in exact 0.5 steps)</pre>
+
+<p><strong>Where the table sits in the paper&rsquo;s own flow.</strong> It is not a corrupted input; it is a healthy <em>intermediate</em> &mdash; the output of the smoothing stage and the input of the testing stage:</p>
+
+<pre>participants (104 people, ragged ages 25.9&ndash;75.2)
+   &rarr; per-subject aggregation (one age per person)
+   &rarr; LOESS fit per molecule (11,305 curves over &le;104 subject-level points)
+   &rarr; curves evaluated at seq(30.0, 75.0, by 0.5)      &larr; sample_info.csv is this stage's output
+   &rarr; significance tests (sliding Wilcoxon, DEG, Spearman)  &larr; and this stage's input
+   &rarr; crest figures</pre>
+
+<p>The generation site is visible in the deposited code: the LOESS-fit script constructs a fresh metadata frame with <code>subject_id = "Subject"</code> over the grid ages and attaches it to the smoothed expression matrix. Critically, that object is packaged in the <em>same three-file convention</em> &mdash; expression matrix, <code>sample_info</code>, <code>variable_info</code> &mdash; used for the genuine per-omics sample tables upstream. Downstream code addresses any such object identically, which is why the substitution of curve points for people happened silently: after the smoothing stage, nothing in the format, the naming, or the code distinguishes a table of grid coordinates from a table of human samples. The tests consumed the one exactly as they would have consumed the other.</p>
+
+<p><strong>How each wrong column property maps to a wrong test assumption.</strong> The connection is not loose: every impossible property the flags describe is a specific inferential assumption, violated and made visible as data:</p>
+
+<table>
+<thead>
+<tr><th style="width:30%">Property of the table</th><th style="width:33%">Assumption it breaks</th><th>Statistical consequence</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sample_id</code> equals <code>age</code> &mdash; the key is a measurement</td><td>Unit of analysis: rows are sampled entities</td><td>Rows are curve coordinates; the <em>n</em> the tests count is grid resolution, not sample size &mdash; 20 points per arm against 6&ndash;9 contributing participants</td></tr>
+<tr><td><code>subject_id</code> is the constant <code>"Subject"</code></td><td>Independence of observations</td><td>Every row derives from the same fit over the same people; the window arms contain zero independent replicates, violating the Wilcoxon and ANOVA assumptions by construction</td></tr>
+<tr><td>Ages in exact 0.5-year steps</td><td>Sample size is collected, not chosen</td><td>The number of &ldquo;observations&rdquo; per window is a parameter of the smoother; the attainable <em>p</em> becomes 2/C(2k,k), set by grid density</td></tr>
+<tr><td>Values lie on one smooth curve</td><td>Rank structure reflects noise in the data</td><td>Within-window ranks are near-deterministic; any separating drift reaches the floor <em>p</em> regardless of effect magnitude, so linear and non-linear change are indistinguishable</td></tr>
+</tbody>
+</table>
+
+<p>This is why the finding is one defect seen from two sides rather than two defects: the impossible table and the invalid inference are the same object. The flags read the violated assumptions off the columns; the tests enact them.</p>
+
+<p><strong>Is the defective code the creator of this table, or its consumer?</strong> Neither alone. The creator is computationally sound &mdash; evaluating a smoother on a grid is legitimate &mdash; but type-dishonest: it stamps curve coordinates into the schema of a sample table. The consumer commits the actual statistical error &mdash; treating those rows as independent observations &mdash; but is conditionally correct: given the input type its labels promise, it is a defensible implementation of the published method, and run on genuine samples it behaves validly (as Carbonneau et al. showed by doing exactly that). The defect lives at the handoff: the creator changed the meaning of &ldquo;row&rdquo; from person-sample to curve-coordinate, the packaging convention carries no type information that could express the change, and nothing downstream checks. Each stage is locally plausible; the composition is invalid &mdash; which is why no stage&rsquo;s author saw it, and why a pass that types tables by their contents did.</p>
+
+<p><strong>How a defect that is in neither stage&rsquo;s code was caught at all:</strong> the handoff was persisted. The creator wrote its output to disk and the deposit published it, so a composition error that exists only <em>between</em> two scripts became a property of an object &mdash; a table whose labels say samples and whose values say grid &mdash; and objects, unlike compositions, can be read without any code. The consumption end left residue too: the cached test output carries the combinatorial fingerprint of grid input. Inter-stage errors are invisible in stages and visible in artifacts; a pipeline that persists its intermediates deposits a record of its own execution, and every mislabeled handoff in that record is an impossible object waiting to be typed.</p>
 
 <p>None of the three flags names LOESS &mdash; the pass has no access to the method, so it can report the impossibility but not its cause. Two calibration facts constrain the claim. First, each individual note was issued as an ordinary warning &mdash; hygiene advice of the kind a reader skims past; the FAIL verdicts came from a composition step that read the notes together: a key that is a measurement, a subject column containing one subject, and a body column implying a different entity than the key. No single flag was decisive. Second, what the flags establish is a <em>necessary</em> condition &mdash; a signature consistent with a generated grid &mdash; not yet the identification of which procedure generated it or which tests consumed it. The remaining steps close that gap.</p>
 
@@ -190,6 +231,24 @@
 </tr>
 </tbody>
 </table>
+
+<h2>Update (2026-08-16): automated lineage reconstruction</h2>
+
+<p class="section-note">Added after the original report. The enrichment pipeline gained a table-to-table lineage stage; the deposit was re-enriched with it, and the manual matrix checks below were run against the deposited files.</p>
+
+<p>The lineage stage proposes candidate data flows between tables (aggregations, keyed copies, derived extracts), then verifies each candidate key-by-key against the actual values before accepting it. On this deposit it split the tables into two components:</p>
+
+<p><strong>The measured data connects.</strong> Four flows were accepted, each with per-key match rates verified: the clinical records table aggregates into the phenotype table (105/105 subject keys matched) and into the participant table, and the participant and phenotype tables align one-to-one on the participant key.</p>
+
+<p><strong>The sample table connects to none of it.</strong> Every candidate edge linking <code>SAMPLE_INFO</code> to the rest of the deposit was rejected by the flow judge, e.g.: <em>&ldquo;zero key overlap indicates no data flow between these tables.&rdquo;</em> The table that the significance tests consume shares no keys and no values with any measured table in the deposit.</p>
+
+<p><strong>The results, however, do have lineage &mdash; and it starts at the grid.</strong> Two key-level checks complete the chain. The deposited LOESS matrix (<code>3-data_analysis/combined_omics/data_preparation/cross_section_loess/expression_data.xlsx</code>, 11,305 molecules &times; 91 columns) has as its column headers exactly the 91 <code>sample_id</code> values of <code>SAMPLE_INFO</code> &mdash; 91/91. And the matrix&rsquo;s row identity (the adjacent <code>variable_info.xlsx</code>) contains all 11,272 <code>variable_id</code> rows of the published clustering-results table (<code>SUPP_CLUSTERING_OF_ALL_MOLECULES</code>) &mdash; 11,272/11,272. The DE-SWAN result files sit on the same branch of the deposit.</p>
+
+<img src="shen-lineage.png" alt="Lineage diagram: the measured tables form a connected flow graph; SAMPLE_INFO is isolated (all candidate edges rejected, zero key overlap); the results chain runs SAMPLE_INFO to the LOESS matrix (91/91 column keys) to the clustering results (11,272/11,272 row keys)." style="max-width:100%; border:1px solid #ddd; border-radius:6px; margin:1rem 0;">
+
+<div class="summary-box">
+  <strong>Lineage verdict.</strong> The deposit&rsquo;s own key structure shows that the paper&rsquo;s results tables are not connected to the measured participant data. Their lineage runs through the LOESS grid: results &larr; smoothed matrix (rows 11,272/11,272) &larr; synthetic age grid (columns 91/91) &larr; nothing measured. The only connection between the published results and the ~104 real participants is the smoothing step that generated the grid.
+</div>
 
 <h2>Scope and reading guide</h2>
 
