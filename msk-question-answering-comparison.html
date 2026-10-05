@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MSK question answering comparison</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#17252d; background:#f4f6f7; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:64px 28px; }
+    main { max-width:1100px; margin:auto; }
+    .eyebrow { font-size:12px; letter-spacing:.15em; text-transform:uppercase; color:#63737d; font-weight:650; }
+    h1 { font-size:clamp(28px,4vw,42px); letter-spacing:-.035em; margin:12px 0 8px; font-weight:650; }
+    .subtitle { margin:0 0 32px; color:#63737d; font-size:17px; }
+    .table-wrap { background:white; border:1px solid #dfe6e9; border-radius:14px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; min-width:720px; }
+    th { text-align:left; background:#eef2f4; color:#566871; font-size:12px; text-transform:uppercase; letter-spacing:.06em; padding:20px 24px; }
+    td { padding:25px 24px; border-top:1px solid #e7edef; font-size:17px; vertical-align:middle; }
+    td:first-child { width:43%; font-weight:600; }
+    td:not(:first-child) { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .detail { display:block; margin-top:5px; font-size:12px; color:#657782; font-weight:400; }
+    .best { background:#eef8f4; }
+    .best td { border-top-color:#d2e8dd; }
+    .score { font-weight:700; font-size:21px; }
+    .best .score { color:#14704d; }
+    .notes { color:#63737d; font-size:13px; line-height:1.65; margin:20px 2px 0; }
+    @media(max-width:640px) { body { padding:32px 16px; } td,th { padding:18px; } }
+    @media print { body { padding:20px; background:white; } .table-wrap { overflow:visible; } table { min-width:0; } }
+
+    section { margin-top:42px; }
+    h2 { font-size:24px; letter-spacing:-.025em; margin:0 0 14px; }
+    .intro { font-size:16px; color:#425864; line-height:1.65; max-width:900px; }
+    .facts { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0; }
+    .fact { background:white; border:1px solid #dfe6e9; border-radius:9px; padding:12px 16px; font-size:14px; }
+    .fact strong { color:#17252d; }
+    .risks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .risk { background:white; border:1px solid #dfe6e9; border-radius:10px; padding:18px; }
+    .risk h3 { margin:0 0 7px; font-size:16px; }
+    .risk p { margin:0; line-height:1.6; color:#526671; font-size:14px; }
+    .questions { list-style:none; padding:0; margin:0; border:1px solid #dfe6e9; background:white; border-radius:12px; overflow:hidden; }
+    .questions li { display:flex; gap:16px; padding:16px 20px; border-top:1px solid #e7edef; line-height:1.55; font-size:15px; }
+    .questions li:first-child { border-top:0; }
+    .number { min-width:30px; color:#74868f; font-size:13px; padding-top:2px; font-variant-numeric:tabular-nums; }
+    .badge { display:inline-block; font-size:11px; background:#fff0d7; color:#805213; border-radius:5px; padding:2px 7px; margin:4px 0 0; }
+    .group-heading { margin:24px 0 12px; font-size:16px; font-weight:650; color:#425864; }
+    code { font-size:.92em; background:#eef2f4; padding:1px 4px; border-radius:4px; }
+    @media(max-width:640px) { .risks { grid-template-columns:1fr; } }
+  </style>
+<script data-goatcounter="https://natural-joints.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">MSK benchmark · 5 October 2026</div>
+    <h1>Accuracy, time and cost</h1>
+    <p class="subtitle">Three methods · the same 50 evaluated questions</p>
+    <div class="table-wrap">
+      <table aria-label="Comparison of three MSK question answering methods">
+        <thead><tr><th scope="col">Arm</th><th scope="col">Accuracy</th><th scope="col">Median time</th><th scope="col">Estimated cost / 50</th></tr></thead>
+        <tbody>
+          <tr><td>Raw files + tools + column names<span class="detail">Two runs combined</span></td><td><span class="score">99.0%</span><span class="detail">99 / 100 answers correct</span></td><td>57.08 s</td><td>$3.07–$15.34<span class="detail">Average per 50-question run</span></td></tr>
+          <tr><td>Column names only<span class="detail">One-shot query + execution</span></td><td><span class="score">64.0%</span><span class="detail">32 / 50 correct</span></td><td>7.54 s</td><td>$0.57–$2.85</td></tr>
+          <tr class="best"><td>Jev + enrichment<span class="detail">Latest compact context · one-shot query + execution</span></td><td><span class="score">100%</span><span class="detail">50 / 50 correct</span></td><td>8.90 s<span class="detail">Estimated, including saved Jev time</span></td><td>$1.19–$5.93</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="notes">All 50 questions are included. The saved join queries passed after adding indexes: 25,775 rows and no unmatched IDs. Raw + tools pools two runs: 100 answers to 50 questions. Its cost is the average per run.<br>Costs are estimates, not recorded bills. Jev routing was reused; new routing and preparation costs are additional.</p>
+<section aria-labelledby="savings-heading"><h2 id="savings-heading">Jev savings versus raw files + tools</h2><div class="facts"><div class="fact"><strong>84.4% less time</strong> · 57.08 → 8.90 seconds</div><div class="fact"><strong>6.4× faster</strong></div><div class="fact"><strong>61.3% fewer reported tokens</strong> · 1.53 million → 593,246</div><div class="fact"><strong>100% accuracy</strong> · versus 99% across raw runs</div></div><p class="notes">Jev time includes saved routing and is an estimate.</p></section>
+<section aria-labelledby="dataset-heading"><h2 id="dataset-heading">The dataset</h2>
+<p class="intro">MSK-MET is a cancer dataset that links patients, sequenced tumor samples, molecular measurements and clinical history. This benchmark uses a frozen snapshot with two available raw clinical files. The enrichment describes a wider set of tables.</p>
+<div class="facts"><div class="fact"><strong>25,775</strong> patients</div><div class="fact"><strong>25,775</strong> tumor samples</div><div class="fact"><strong>10</strong> described tables</div><div class="fact"><strong>123</strong> described columns</div><div class="fact"><strong>2</strong> queryable raw tables</div></div>
+<p class="intro"><code>DATA_CLINICAL_PATIENT</code> holds demographics, age milestones and survival fields. <code>DATA_CLINICAL_SAMPLE</code> holds sample origin, tumor classification, gene panel, molecular measurements and metastasis flags. They join through <code>PATIENT_ID</code>.</p></section>
+<section aria-labelledby="risks-heading"><h2 id="risks-heading">Why these questions are difficult</h2><p class="intro">Correct SQL is only part of the task. The answer also needs the right definition, unit, time origin and level of observation.</p><div class="risks">
+<article class="risk"><h3>Different table units</h3><p>The patient table describes people; the sample table describes sequenced tumors. This snapshot has one sample per patient, verified by keys. Other snapshots can have more samples per person and duplicate patient values after a join.</p></article>
+<article class="risk"><h3>Survival starts at sequencing</h3><p>The reviewed meaning of OS_MONTHS starts at first tumor sequencing, not initial diagnosis. Some source text conflicts with that definition. A query can return valid numbers while measuring the wrong time period.</p></article>
+<article class="risk"><h3>Sample origin versus patient history</h3><p>A Metastasis sample is tissue taken from a metastatic site. A patient-level metastasis flag records disease history. These concepts cannot be substituted for each other.</p></article>
+<article class="risk"><h3>Broad anatomical flags</h3><p>Metastasis flags can cover broad billing-code categories. A head-and-neck label can include a broader respiratory mapping; a biliary label need not isolate bile ducts. Recorded sites do not establish simultaneous onset.</p></article>
+<article class="risk"><h3>Units and assay differences</h3><p>TMB is nonsynonymous mutations per megabase, purity is a percentage, and FGA is a genomic fraction. Sequencing coverage is depth. Different gene panels do not guarantee equal detection sensitivity.</p></article>
+<article class="risk"><h3>Missing and capped values</h3><p>Missing death age does not establish that a patient is alive. Notes identify age 90 as 90 or older. Missing values, sentinel codes and capped ages need explicit handling.</p></article>
+<article class="risk"><h3>Several cancer labels</h3><p>Organ system, broad cancer type, detailed cancer type and OncoTree code serve different purposes. Some detailed labels have several codes, so counting codes can overcount disease categories.</p></article>
+<article class="risk"><h3>Evidence limits</h3><p>Only two clinical raw files are available here. Other tables have enrichment metadata but cannot be queried in this benchmark. The clinical files lack treatment exposure, so they cannot establish treatment benefit. Living-only median follow-up is not cohort median survival.</p></article>
+</div><p class="notes">Definitions above summarize the supplied enrichment and verified snapshot. They are not claims that every source note agrees.</p></section><section aria-labelledby="questions-heading"><h2 id="questions-heading">All 50 questions</h2><p class="intro">The original wording is preserved. Question 46 now passes with indexed execution of the unchanged saved queries; no new model answers were generated.</p>
+<h3 class="group-heading">Questions 1–20 · meanings and interpretation</h3><ol class="questions">
+<li><span class="number">1</span><div>What event starts OS_MONTHS, and can it measure survival from initial diagnosis?</div></li>
+<li><span class="number">2</span><div>What does DMETS_DX_LUNG mean in this dataset? Can it define lung metastasis at initial diagnosis?</div></li>
+<li><span class="number">3</span><div>Does IS_DIST_MET_MAPPED tell us that the sequenced sample is metastatic? What does it represent?</div></li>
+<li><span class="number">4</span><div>Which field gives the sampled metastatic tissue site, and how is it different from the original tumor site?</div></li>
+<li><span class="number">5</span><div>Are MET_COUNT and MET_SITE_COUNT interchangeable measures? Explain the distinction and any limit on their timing.</div></li>
+<li><span class="number">6</span><div>Can MET_SITE_COUNT be treated as metastatic burden known at diagnosis?</div></li>
+<li><span class="number">7</span><div>How should AGE_AT_SEQUENCING values of 90 be interpreted when estimating the age distribution?</div></li>
+<li><span class="number">8</span><div>Can AGE_AT_EVIDENCE_OF_METS replace the date of first lung metastasis?</div></li>
+<li><span class="number">9</span><div>Does TMB_NONSYNONYMOUS give a raw mutation count? What is the unit?</div></li>
+<li><span class="number">10</span><div>What does FGA measure? Is it equivalent to tumor purity?</div></li>
+<li><span class="number">11</span><div>Are TUMOR_PURITY and SAMPLE_COVERAGE two ways to measure the same quantity?</div></li>
+<li><span class="number">12</span><div>If a gene has no alteration field in these two clinical tables, can we declare it mutation-negative for every patient? How does GENE_PANEL matter?</div></li>
+<li><span class="number">13</span><div>Can we derive MSI_TYPE from MSI_SCORE using a universal cutoff of 10?</div></li>
+<li><span class="number">14</span><div>How should ONCOTREE_CODE be related to CANCER_TYPE and CANCER_TYPE_DETAILED? Are their strings interchangeable?</div></li>
+<li><span class="number">15</span><div>What key should join the patient and sample tables, and what row-grain checks should precede the merge?</div></li>
+<li><span class="number">16</span><div>After joining the tables, is averaging OS_MONTHS over sample rows always a patient-level average?</div></li>
+<li><span class="number">17</span><div>Can missing AGE_AT_DEATH safely be converted to alive status? Which field should provide vital status?</div></li>
+<li><span class="number">18</span><div>Can SUBTYPE_ABBREVIATION be treated as a numeric disease severity score?</div></li>
+<li><span class="number">19</span><div>Can DMETS_DX_BILIARY_TRACT isolate bile-duct metastases? Explain any limitation of this field.</div></li>
+<li><span class="number">20</span><div>Can DMETS_DX_HEAD_NECK identify metastases specifically to head-and-neck organs?</div></li>
+</ol>
+<h3 class="group-heading">Questions 21–50 · meanings, calculations and evidence limits</h3><ol class="questions">
+<li><span class="number">21</span><div>Does PRIMARY_SITE describe the sampled tissue location even when SAMPLE_TYPE is Metastasis?</div></li>
+<li><span class="number">22</span><div>Can ORGAN_SYSTEM replace ONCOTREE_CODE when grouping precise histologies?</div></li>
+<li><span class="number">23</span><div>Is TUMOR_PURITY a proportion from zero to one or a percentage, and how does it differ from FGA?</div></li>
+<li><span class="number">24</span><div>Does SAMPLE_COVERAGE count how many tumor samples a person has?</div></li>
+<li><span class="number">25</span><div>Can SUBTYPE and SUBTYPE_ABBREVIATION be treated as interchangeable text without checking their mapping?</div></li>
+<li><span class="number">26</span><div>Would a negative DMETS_DX_BONE flag establish that a patient never developed bone metastases after last follow-up?</div></li>
+<li><span class="number">27</span><div>Is a missing AGE_AT_DEATH evidence that the patient is alive?</div></li>
+<li><span class="number">28</span><div>Can adding OS_MONTHS across patients produce the number of months the cohort was observed as one timeline?</div></li>
+<li><span class="number">29</span><div>Would pooling TMB_NONSYNONYMOUS across all GENE_PANEL values guarantee directly comparable detection sensitivity?</div></li>
+<li><span class="number">30</span><div>Can a positive DMETS_DX_INTRA_ABDOMINAL flag identify peritoneal rather than retroperitoneal disease with certainty?</div></li>
+<li><span class="number">31</span><div>How many rows and distinct PATIENT_ID values are in the patient table?</div></li>
+<li><span class="number">32</span><div>How many patients have missing AGE_AT_EVIDENCE_OF_METS, and what percentage of patients is that?</div></li>
+<li><span class="number">33</span><div>What are the median and range of nonmissing AGE_AT_SEQUENCING?</div></li>
+<li><span class="number">34</span><div>How many nonmissing AGE_AT_SEQUENCING values equal 90, and can the pile-up alone prove top-coding?</div></li>
+<li><span class="number">35</span><div>List the observed SEX categories and counts, including missing values.</div></li>
+<li><span class="number">36</span><div>What are the observed SAMPLE_TYPE categories and their counts?</div></li>
+<li><span class="number">37</span><div>Which three CANCER_TYPE categories contain the most samples, and what are their counts?</div></li>
+<li><span class="number">38</span><div>Count samples for each GENE_PANEL, including missing or sentinel values.</div></li>
+<li><span class="number">39</span><div>What are the nonmissing count, median and maximum of TMB_NONSYNONYMOUS?</div></li>
+<li><span class="number">40</span><div>Compare median TMB_NONSYNONYMOUS between Primary and Metastasis SAMPLE_TYPE groups; report each nonmissing group count and avoid a causal claim.</div></li>
+<li><span class="number">41</span><div>Which has more missing sample values, TUMOR_PURITY or SAMPLE_COVERAGE? Give both counts.</div></li>
+<li><span class="number">42</span><div>Among samples with nonmissing FGA and TMB_NONSYNONYMOUS, what is their Pearson correlation and complete-pair count? Does it prove causation?</div></li>
+<li><span class="number">43</span><div>How many samples have both DMETS_DX_LUNG and DMETS_DX_LIVER positive? Interpret as recorded flags, not simultaneous onset.</div></li>
+<li><span class="number">44</span><div>How many rows disagree between IS_DIST_MET_MAPPED and MET_COUNT &gt; 0? Treat missing values separately.</div></li>
+<li><span class="number">45</span><div>How many CANCER_TYPE_DETAILED labels map to more than one ONCOTREE_CODE in these sample rows?</div></li>
+<li><span class="number">46</span><div>After joining sample to patient by PATIENT_ID, how many rows remain, and are any patient IDs unmatched?<br><span class="badge">Recovered with indexes · 25,775 rows, no unmatched IDs</span></div></li>
+<li><span class="number">47</span><div>After the verified patient-sample join, compare median AGE_AT_SEQUENCING by SAMPLE_TYPE and give nonmissing counts.</div></li>
+<li><span class="number">48</span><div>Can the two clinical files establish that a targeted treatment improved survival, without treatment records or randomized assignment?</div></li>
+<li><span class="number">49</span><div>Calculate the fraction of samples with a structural variant using DATA_SV. If the required raw table is unavailable, identify what evidence is missing.</div></li>
+<li><span class="number">50</span><div>Can median OS_MONTHS among patients marked living be called median overall survival of the cohort? Explain censoring and what analysis is needed.</div></li>
+</ol>
+</section>
+  </main>
+</body>
+</html>
